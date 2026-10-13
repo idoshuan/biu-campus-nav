@@ -3,3 +3,4 @@ artifact.html
 node_modules/
 .wrangler/
 __pycache__/
+private/
