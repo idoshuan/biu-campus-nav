@@ -1,0 +1,924 @@
+<title>מצפן בר־אילן</title>
+<meta name="description" content="השיעור הבא, מסלול הליכה וזמן הגעה בקמפוס בר־אילן">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Secular+One&display=swap">
+<style>
+/* Layout: one column on phones (next-class card, map, day, search); on wide screens the panel sits beside a sticky map. */
+:root {
+  --paper: #f2f5ee; --card: #ffffff; --ink: #15281e; --muted: #5d6d62; --line: #d5ded1;
+  --lawn: #dfe9d4; --lawn-edge: #b9cfac; --walk: #ffffff; --road: #c9d3c4; --bldg: #c6cfc0; --bldg-edge: #8f9d88;
+  --accent: #0d6e46; --accent-ink: #ffffff; --route: #d4471c; --you: #1f6fd1;
+  --ok: #1d7a3e; --warn: #9a6100; --late: #b8322a; --ok-bg: #e3f1e6; --warn-bg: #f8edd6; --late-bg: #f8e1de;
+  --f-display: "Secular One", "Assistant", "Arial Hebrew", sans-serif;
+  --f-body: "Assistant", "Arial Hebrew", "Segoe UI", system-ui, sans-serif;
+  --r: 14px;
+  /* building areas, colours taken from the official campus map */
+  --a-exact: #f2c230; --a-jewish: #ee8434; --a-heritage: #1fa5a0; --a-classroom: #d65b4f; --a-law: #2e9ce0;
+  --a-student: #e43f8f; --a-communal: #17a24f; --a-social: #82c341; --a-humanities: #a46bc8;
+  --a-engineering: #c3b636; --a-community: #cfae86; --a-dorms: #ef62ab; --a-park: #1b8a52;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #0f1612; --card: #17211b; --ink: #e5eee6; --muted: #9aab9f; --line: #2a372f;
+  --lawn: #17241c; --lawn-edge: #2b4133; --walk: #3a4a40; --road: #2a352e; --bldg: #39443d; --bldg-edge: #56645b;
+  --accent: #3fbf86; --accent-ink: #08140e; --route: #ff7a45; --you: #5aa2ff;
+  --ok: #6fd18f; --warn: #f0b552; --late: #ff8a7d; --ok-bg: #173023; --warn-bg: #352a14; --late-bg: #3a1d1a;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --paper: #0f1612; --card: #17211b; --ink: #e5eee6; --muted: #9aab9f; --line: #2a372f;
+  --lawn: #17241c; --lawn-edge: #2b4133; --walk: #3a4a40; --road: #2a352e; --bldg: #39443d; --bldg-edge: #56645b;
+  --accent: #3fbf86; --accent-ink: #08140e; --route: #ff7a45; --you: #5aa2ff;
+  --ok: #6fd18f; --warn: #f0b552; --late: #ff8a7d; --ok-bg: #173023; --warn-bg: #352a14; --late-bg: #3a1d1a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--paper); color: var(--ink); }
+body { direction: rtl; font: 16px/1.5 var(--f-body); padding-inline: 16px; padding-block: 12px 40px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1180px; margin-inline: auto; display: grid; gap: 16px; }
+@media (min-width: 900px) {
+  .wrap { grid-template-columns: minmax(340px, 420px) 1fr; align-items: start; }
+  .mapcol { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+  .mapbox { height: calc(100vh - 120px) !important; }
+}
+.panel, .mapcol, .next, .row, label.from { min-width: 0; }
+.panel { display: grid; gap: 16px; }
+header.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+header.top h1 { font: 26px/1.1 var(--f-display); margin: 0; letter-spacing: .01em; }
+header.top h1 span { color: var(--accent); }
+.linkbtn { background: none; border: 0; padding: 4px 0; color: var(--accent); font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+.next { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 12px; }
+.eyebrow { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .04em; }
+.next h2 { font: 24px/1.2 var(--f-display); margin: 0; text-wrap: balance; }
+.where { display: flex; gap: 12px; align-items: center; }
+.bchip { min-width: 64px; padding: 6px 10px; border-radius: 10px; font: 22px/1 var(--f-display); text-align: center; color: #15281e; font-variant-numeric: tabular-nums; flex: none; }
+.where .bname { font-weight: 600; line-height: 1.3; }
+.where .sub { color: var(--muted); font-size: 14px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { display: grid; gap: 2px; }
+.stat b { font: 22px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 13px; color: var(--muted); }
+.status { border-radius: 10px; padding: 10px 12px; font-weight: 700; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.status.ok { background: var(--ok-bg); color: var(--ok); }
+.status.warn { background: var(--warn-bg); color: var(--warn); }
+.status.late { background: var(--late-bg); color: var(--late); }
+.status small { font-weight: 600; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 9px 14px; cursor: pointer; font-weight: 600; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn:disabled { opacity: .5; cursor: default; }
+.from { display: grid; gap: 6px; width: 100%; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+.seg button { border: 0; border-radius: 9px; background: transparent; padding: 8px 10px; cursor: pointer; display: grid; gap: 1px; text-align: start; min-width: 0; }
+.seg button b { font-weight: 700; }
+.seg button span { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.seg button[aria-checked="true"] { background: var(--card); box-shadow: 0 0 0 1px var(--accent), 0 1px 3px rgb(0 0 0 / .12); }
+.seg button[aria-checked="true"] b { color: var(--accent); }
+.seg button:disabled { cursor: default; opacity: .55; }
+label.from { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--muted); flex: 1 1 100%; }
+label.from select { flex: 1 1 0; min-width: 0; width: 100%; }
+select { border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 8px 10px; max-width: 100%; }
+.note { font-size: 13px; color: var(--muted); }
+.banner { border: 1px dashed var(--accent); border-radius: var(--r); padding: 12px 14px; display: flex; gap: 10px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+
+section.block { display: grid; gap: 10px; min-width: 0; }
+section.block > h3 { font: 18px/1.2 var(--f-display); margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.days { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.days button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 4px 12px; cursor: pointer; white-space: nowrap; font-weight: 600; }
+.days button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.days button .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-inline-start: 6px; vertical-align: middle; }
+ol.timeline { list-style: none; margin: 0; padding: 0; display: grid; }
+.cls { display: grid; grid-template-columns: 56px 1fr auto; gap: 10px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; cursor: pointer; text-align: start; width: 100%; }
+.cls.past { opacity: .55; }
+.cls.now { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.cls .t { font-variant-numeric: tabular-nums; font-weight: 700; line-height: 1.2; }
+.cls .t small { display: block; color: var(--muted); font-weight: 400; }
+.cls .ti { min-width: 0; }
+.cls .ti b { display: block; overflow-wrap: anywhere; }
+.cls .ti span { color: var(--muted); font-size: 14px; }
+.cls .bchip { min-width: 52px; font-size: 17px; padding: 5px 8px; }
+.gap { padding: 6px 0 6px 0; margin-inline-start: 26px; border-inline-start: 2px dotted var(--line); padding-inline-start: 18px; font-size: 14px; color: var(--muted); display: grid; gap: 4px; }
+.gap.tight { color: var(--late); font-weight: 700; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { display: inline-flex; gap: 5px; align-items: center; border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 2px 10px; font-size: 13px; color: var(--ink); cursor: pointer; }
+.chip svg { width: 14px; height: 14px; }
+.empty { color: var(--muted); padding: 12px; border: 1px dashed var(--line); border-radius: 12px; }
+
+.search input { width: 100%; border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 10px 12px; }
+.results { display: grid; gap: 6px; }
+.res { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; cursor: pointer; text-align: start; width: 100%; }
+.res .bchip { min-width: 52px; font-size: 16px; padding: 4px 6px; }
+.res span { color: var(--muted); font-size: 13px; display: block; }
+.pchip { background: var(--ink) !important; color: var(--paper) !important; display: grid; place-items: center; }
+.pchip svg { width: 20px; height: 20px; }
+.pchip.shuttle { background: #7a1c24 !important; color: #ffffff !important; }
+
+.mapbox { position: relative; height: min(58vh, 560px); min-height: 320px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; touch-action: none; }
+.mapbox svg { width: 100%; height: 100%; display: block; cursor: grab; user-select: none; }
+.mapbox svg.drag { cursor: grabbing; }
+.maptools { position: absolute; top: 10px; inset-inline-start: 10px; display: grid; gap: 6px; }
+.maptools button { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); cursor: pointer; font: 20px/1 var(--f-body); display: grid; place-items: center; }
+.legend { position: absolute; bottom: 8px; inset-inline-end: 8px; background: color-mix(in srgb, var(--card) 88%, transparent); border-radius: 8px; padding: 4px 8px; font-size: 12px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; max-width: calc(100% - 16px); }
+.popup { position: absolute; z-index: 3; transform: translate(-50%, calc(-100% - 14px)); width: max-content; max-width: min(280px, calc(100% - 16px));
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px; box-shadow: 0 8px 24px rgb(0 0 0 / .22); display: grid; gap: 8px; }
+.popup.below { transform: translate(-50%, 14px); }
+.popup::after { content: ""; position: absolute; left: calc(50% + var(--arrow, 0px) - 7px); bottom: -7px; width: 12px; height: 12px; background: var(--card);
+  border: solid var(--line); border-width: 0 1px 1px 0; transform: rotate(45deg); }
+.popup.below::after { bottom: auto; top: -7px; transform: rotate(225deg); }
+.pop-head { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: start; }
+.pop-head .bchip { min-width: 48px; font-size: 17px; padding: 5px 8px; }
+.pop-t { min-width: 0; display: grid; line-height: 1.3; }
+.pop-t span { font-size: 12px; color: var(--muted); }
+.pop-x { border: 0; background: none; font-size: 20px; line-height: 1; cursor: pointer; color: var(--muted); padding: 0 2px; }
+.popup .btn { width: 100%; }
+.legend i { display: inline-block; width: 18px; height: 0; border-top: 3px solid var(--route); vertical-align: middle; margin-inline-end: 4px; }
+.legend i.est { border-top: 2px dashed var(--muted); }
+.legend .sk { display: inline-block; width: 9px; height: 9px; background: #7a1c24; border-radius: 2px; margin-inline-end: 4px; vertical-align: middle; }
+.legend .gk { display: inline-block; width: 9px; height: 9px; border: 1.5px solid var(--ink); border-radius: 2px; margin-inline-end: 4px; vertical-align: middle; }
+.attrib { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.attrib a { color: inherit; }
+#m-walk path { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.w-foot { stroke: var(--walk); stroke-width: 3; }
+.w-road { stroke: var(--road); stroke-width: 5; }
+.w-steps { stroke: var(--walk); stroke-width: 3; stroke-dasharray: 2 2; }
+.b-shape { stroke: var(--bldg-edge); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.b-other { fill: var(--bldg); stroke: var(--bldg-edge); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.b-est { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+.b-target { stroke: var(--route) !important; stroke-width: 3 !important; }
+.lbl { font-family: var(--f-display); fill: var(--ink); paint-order: stroke; stroke: var(--paper); stroke-width: 3px; stroke-linejoin: round; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.route-casing { fill: none; stroke: var(--card); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.route { fill: none; stroke: var(--route); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; stroke-dasharray: 10 8; animation: march 1.2s linear infinite; }
+@keyframes march { to { stroke-dashoffset: -18; } }
+@media (prefers-reduced-motion: reduce) { .route { animation: none; stroke-dasharray: none; } }
+
+dialog { border: 1px solid var(--line); border-radius: var(--r); background: var(--card); color: var(--ink); padding: 0; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 48px); }
+dialog::backdrop { background: rgb(0 0 0 / .45); }
+.dlg { padding: 18px; display: grid; gap: 16px; }
+.dlg h3 { font: 20px/1.2 var(--f-display); margin: 0; }
+.dlg h4 { margin: 0 0 6px; font-size: 16px; }
+.field { display: grid; gap: 6px; }
+.field > span { font-weight: 700; }
+.dlg fieldset { border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin: 0; display: grid; gap: 8px; min-width: 0; }
+.dlg legend { font-weight: 700; padding-inline: 4px; }
+.dlg input[type=url], .dlg input[type=text], .dlg input[type=time], .dlg textarea { width: 100%; border: 1px solid var(--line); background: var(--paper); border-radius: 8px; padding: 8px 10px; }
+.dlg textarea { min-height: 70px; font-size: 13px; direction: ltr; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.msg { font-size: 14px; border-radius: 8px; padding: 8px 10px; }
+.msg.ok { background: var(--ok-bg); color: var(--ok); }
+.msg.err { background: var(--late-bg); color: var(--late); }
+.courses { display: grid; gap: 6px; }
+.course { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; font-size: 14px; }
+.course select { font-size: 13px; padding: 4px 6px; max-width: 170px; }
+ol.steps { margin: 0; padding-inline-start: 20px; font-size: 14px; color: var(--muted); }
+footer { font-size: 12px; color: var(--muted); }
+</style>
+
+<div class="wrap">
+  <div class="panel">
+    <header class="top">
+      <h1>מצפן <span>בר־אילן</span></h1>
+      <button class="linkbtn" id="open-sched" type="button">חיבור יומן</button>
+    </header>
+
+    <div class="banner" id="sample-banner" hidden>
+      <div><b>זו מערכת לדוגמה.</b> <span class="note">מחברים יומן ורואים את השיעורים האמיתיים.</span></div>
+      <button class="btn primary" type="button" id="sample-connect">חיבור יומן</button>
+    </div>
+
+    <article class="next" id="next" aria-live="polite"></article>
+
+    <section class="block">
+      <h3><span id="day-title">היום</span><span class="note" id="day-sum"></span></h3>
+      <div class="days" id="days" role="group" aria-label="בחירת יום"></div>
+      <ol class="timeline" id="timeline"></ol>
+    </section>
+
+    <section class="block search">
+      <h3>חיפוש בניין או מקום</h3>
+      <input id="q" type="search" placeholder="בניין או מקום: 504, ספרייה, קפה, כספומט, הסעות" autocomplete="off">
+      <div class="results" id="results"></div>
+    </section>
+
+    <footer>פרויקט סטודנטים, לא אתר רשמי של האוניברסיטה. מפה: © תורמי OpenStreetMap (ODbL). מספרי בניינים, תחנות הסעות, חניונים וחלק מבתי הקפה לפי מפת הקמפוס. מיקום מסומן בקו מקווקו הוא הערכה (בדרך כלל עד 30 מ').</footer>
+  </div>
+
+  <div class="mapcol">
+    <div class="mapbox" id="mapbox">
+      <svg id="map" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="מפת הקמפוס">
+        <g id="m-base"></g><g id="m-walk"></g><g id="m-bldg"></g><g id="m-route"></g><g id="m-poi"></g><g id="m-lbl"></g><g id="m-top"></g>
+      </svg>
+      <div class="maptools">
+        <button type="button" id="z-in" aria-label="הגדלה">+</button>
+        <button type="button" id="z-out" aria-label="הקטנה">−</button>
+        <button type="button" id="z-fit" aria-label="התאמה למסלול">⤢</button>
+      </div>
+      <div class="legend"><span><i></i>מסלול</span><span><i class="est"></i>מיקום משוער</span><span><b class="gk"></b>שער</span><span><b class="sk"></b>הסעות</span></div>
+    </div>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog" class="dlg">
+    <div class="row" style="justify-content:space-between"><h3>חיבור יומן</h3><button class="btn" value="close">סגירה</button></div>
+    <label class="field" for="ics-url">
+      <span>קישור ליומן (iCal)</span>
+      <input type="url" id="ics-url" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics" dir="ltr" autocomplete="off">
+      <small class="note">ב־Google Calendar: הגדרות ← בוחרים את היומן ← "הכתובת הסודית בפורמט iCal".</small>
+    </label>
+    <div class="row"><button class="btn primary" type="button" id="ics-load">חיבור</button><button class="btn" type="button" id="ics-remove" hidden>ניתוק</button></div>
+    <div id="ics-msg" class="msg" hidden></div>
+  </form>
+</dialog>
+
+<script type="application/json" id="campus">/*CAMPUS_DATA*/</script>
+<script>
+"use strict";
+document.documentElement.lang = "he"; document.documentElement.dir = "rtl";
+const C = JSON.parse(document.getElementById("campus").textContent);
+const $ = (id) => document.getElementById(id);
+const SVGNS = "http://www.w3.org/2000/svg";
+const WALK_MPS = 1.25, STEPS_FACTOR = 1.8, BUFFER_MIN = 2;
+const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+const AREA_DARK_TEXT = new Set(["exact", "social", "engineering", "community", "jewish"]);
+
+/* ---------- storage (per device) ---------- */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("biu-nav:" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("biu-nav:" + k, JSON.stringify(v)); } catch {} },
+};
+
+/* ---------- campus graph ---------- */
+const NODES = C.nodes, ADJ = NODES.map(() => []);
+for (const [a, b, len, steps] of C.edges) { const w = len * (steps ? STEPS_FACTOR : 1); ADJ[a].push([b, w, len]); ADJ[b].push([a, w, len]); }
+const BLD = new Map(C.buildings.map((b) => [b.n, b]));
+const GATES = C.pois.filter((p) => p.k === "gate");
+const spCache = new Map();
+function shortest(src) { // Dijkstra over walking cost; returns {cost, len, prev}
+  if (spCache.has(src)) return spCache.get(src);
+  const n = NODES.length, cost = new Float64Array(n).fill(Infinity), len = new Float64Array(n), prev = new Int32Array(n).fill(-1);
+  const heap = [[0, src]]; cost[src] = 0;
+  const push = (it) => { heap.push(it); let i = heap.length - 1; while (i) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
+  const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
+  while (heap.length) {
+    const [c, u] = pop(); if (c > cost[u]) continue;
+    for (const [v, w, l] of ADJ[u]) if (c + w < cost[v]) { cost[v] = c + w; len[v] = len[u] + l; prev[v] = u; push([cost[v], v]); }
+  }
+  const r = { cost, len, prev }; spCache.set(src, r); return r;
+}
+function route(fromNode, toNode) {
+  const sp = shortest(toNode); // undirected: walk prev pointers from the start towards the target
+  if (!isFinite(sp.cost[fromNode])) return null;
+  const path = [fromNode]; let u = fromNode; while (u !== toNode) { u = sp.prev[u]; path.push(u); }
+  return { path, meters: sp.len[fromNode], minutes: sp.cost[fromNode] / WALK_MPS / 60 };
+}
+function nearestNode(x, y) { let best = 0, bd = Infinity; NODES.forEach(([nx, ny], i) => { const d = (nx - x) ** 2 + (ny - y) ** 2; if (d < bd) { bd = d; best = i; } }); return best; }
+const toXY = (lat, lon) => [(lon - C.origin[1]) * C.k[0], -(lat - C.origin[0]) * C.k[1]];
+const toLL = ([x, y]) => [C.origin[0] - y / C.k[1], C.origin[1] + x / C.k[0]];
+
+/* ---------- calendar (.ics) ---------- */
+function unescapeText(s) { return s.replace(/\\n/gi, "\n").replace(/\\([,;\\])/g, "$1"); }
+function parseICS(text) {
+  const lines = text.replace(/\r?\n[ \t]/g, "").split(/\r?\n/);
+  const evs = []; let cur = null, depth = 0;
+  for (const ln of lines) {
+    if (ln === "BEGIN:VEVENT") { cur = { p: {}, ex: [] }; continue; }
+    if (ln === "END:VEVENT") { if (cur) evs.push(cur); cur = null; continue; }
+    if (!cur) continue;
+    if (/^BEGIN:/.test(ln)) depth++; else if (/^END:/.test(ln)) depth--;
+    if (depth > 0) continue; // skip VALARM etc.
+    const m = ln.match(/^([A-Za-z0-9-]+)((?:;[^:"]*(?:"[^"]*")?[^:"]*)*):(.*)$/); if (!m) continue;
+    const params = {}; for (const part of m[2].split(";").slice(1)) { const i = part.indexOf("="); if (i > 0) params[part.slice(0, i).toUpperCase()] = part.slice(i + 1).replace(/^"|"$/g, ""); }
+    const name = m[1].toUpperCase();
+    if (name === "EXDATE") cur.ex.push(...m[3].split(",").map((v) => ({ v, params })));
+    else cur.p[name] = { v: m[3], params };
+  }
+  return evs;
+}
+function normTZ(tz) {
+  if (!tz) return null;
+  if (/israel|jerusalem|tel.?aviv/i.test(tz)) return "Asia/Jerusalem";
+  if (/^(utc|gmt|z)$/i.test(tz)) return "UTC";
+  try { new Intl.DateTimeFormat("en", { timeZone: tz }); return tz; } catch { return null; }
+}
+const tzFmt = new Map();
+function tzOffset(t, tz) {
+  if (!tzFmt.has(tz)) tzFmt.set(tz, new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+  const o = {}; for (const p of tzFmt.get(tz).formatToParts(new Date(t))) o[p.type] = +p.value;
+  return Date.UTC(o.year, o.month - 1, o.day, o.hour % 24, o.minute, o.second) - t;
+}
+function wallToDate(w, tz) { // w = [y, m, d, h, mi, s]
+  if (tz === "UTC") return new Date(Date.UTC(w[0], w[1] - 1, w[2], w[3], w[4], w[5]));
+  if (!tz) return new Date(w[0], w[1] - 1, w[2], w[3], w[4], w[5]);
+  const guess = Date.UTC(w[0], w[1] - 1, w[2], w[3], w[4], w[5]);
+  let t = guess - tzOffset(guess, tz); t = guess - tzOffset(t, tz);
+  return new Date(t);
+}
+function parseDT(prop) {
+  if (!prop) return null;
+  const m = prop.v.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?/); if (!m) return null;
+  const allDay = !m[4];
+  const w = [+m[1], +m[2], +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0)];
+  const tz = m[7] ? "UTC" : normTZ(prop.params.TZID);
+  return { w, tz, allDay, date: wallToDate(w, tz) };
+}
+function parseDuration(v) {
+  const m = v && v.match(/^([+-])?P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/); if (!m) return null;
+  return ((+m[2] || 0) * 604800 + (+m[3] || 0) * 86400 + (+m[4] || 0) * 3600 + (+m[5] || 0) * 60 + (+m[6] || 0)) * 1000;
+}
+const ICS_DAYS = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+function expandICS(text, from, to) {
+  const out = [], overridden = new Map();
+  const evs = parseICS(text).filter((e) => e.p.DTSTART && !/CANCELLED/i.test(e.p.STATUS?.v || ""));
+  for (const e of evs) if (e.p["RECURRENCE-ID"]) {
+    const uid = e.p.UID?.v || "", r = parseDT(e.p["RECURRENCE-ID"]);
+    if (r) { if (!overridden.has(uid)) overridden.set(uid, new Set()); overridden.get(uid).add(r.date.getTime()); }
+  }
+  for (const e of evs) {
+    const s = parseDT(e.p.DTSTART); if (!s || s.allDay) continue;
+    const endP = parseDT(e.p.DTEND), dur = endP ? endP.date - s.date : (parseDuration(e.p.DURATION?.v) ?? 3600000);
+    const base = { title: unescapeText(e.p.SUMMARY?.v || "שיעור"), location: unescapeText(e.p.LOCATION?.v || ""), desc: unescapeText(e.p.DESCRIPTION?.v || ""), uid: e.p.UID?.v || "" };
+    const starts = [];
+    const rr = e.p.RRULE && !e.p["RECURRENCE-ID"] ? Object.fromEntries(e.p.RRULE.v.split(";").map((kv) => kv.split("="))) : null;
+    if (!rr) starts.push(s.date);
+    else {
+      const freq = rr.FREQ, interval = +(rr.INTERVAL || 1), count = rr.COUNT ? +rr.COUNT : Infinity;
+      const until = rr.UNTIL ? parseDT({ v: rr.UNTIL, params: { TZID: s.tz && s.tz !== "UTC" ? s.tz : undefined } }) : null;
+      const untilT = until ? (until.allDay ? until.date.getTime() + 86399999 : until.date.getTime()) : Infinity;
+      const byday = rr.BYDAY ? rr.BYDAY.split(",").map((d) => ICS_DAYS.indexOf(d.slice(-2))) : null;
+      const day0 = Date.UTC(s.w[0], s.w[1] - 1, s.w[2]), dow0 = new Date(day0).getUTCDay();
+      const monday0 = day0 - ((dow0 + 6) % 7) * 86400000;
+      const ex = new Set(e.ex.map((x) => parseDT(x)?.date.getTime()));
+      let n = 0;
+      for (let i = 0; i < 4000 && n < count; i++) {
+        const day = day0 + i * 86400000, dd = new Date(day), dow = dd.getUTCDay();
+        let hit = false;
+        if (freq === "DAILY") hit = i % interval === 0;
+        else if (freq === "WEEKLY") { const wk = Math.floor((day - ((dow + 6) % 7) * 86400000 - monday0) / 604800000); hit = wk % interval === 0 && (byday ? byday.includes(dow) : dow === dow0); }
+        else { if (i === 0) hit = true; else break; } // MONTHLY/YEARLY: only the first occurrence
+        if (!hit) continue;
+        const st = wallToDate([dd.getUTCFullYear(), dd.getUTCMonth() + 1, dd.getUTCDate(), s.w[3], s.w[4], s.w[5]], s.tz);
+        if (st.getTime() > untilT || st > to) break;
+        n++;
+        if (!ex.has(st.getTime())) starts.push(st);
+      }
+    }
+    const skip = overridden.get(base.uid);
+    for (const st of starts) {
+      if (rr && skip && skip.has(st.getTime())) continue;
+      const en = new Date(st.getTime() + dur);
+      if (en >= from && st <= to) out.push({ ...base, start: st, end: en });
+    }
+  }
+  return out;
+}
+
+/* ---------- finding the building in a calendar location ---------- */
+const NUMS = [...BLD.keys()].sort((a, b) => b.length - a.length);
+const NUM_RE = new RegExp("(?<![\\d\\-./])(" + NUMS.join("|") + ")(?![\\d.])", "i");
+function findBuilding(text) {
+  if (!text) return null;
+  const m = text.match(NUM_RE);
+  if (m) {
+    const num = m[1].toUpperCase(), rest = text.slice(m.index + m[0].length);
+    const r = rest.match(/^\s*(?:[-/,:]|חדר|room|כיתה|אולם)?\s*(?:חדר|room|כיתה|אולם)?\s*([0-9]{1,4}[A-Za-zא-ת]?)/i);
+    return { b: num, room: r ? r[1] : "" };
+  }
+  const t = text.toLowerCase();
+  for (const b of C.buildings) {
+    const keys = [b.he, b.en].filter(Boolean).map((s) => s.toLowerCase().replace(/ע"ש.*$|the /g, "").trim()).filter((s) => s.length > 5);
+    if (keys.some((k) => t.includes(k))) return { b: b.n, room: "" };
+  }
+  if (/ספרי|library/i.test(text)) return { b: "401", room: "" };
+  return null;
+}
+
+/* ---------- schedule state ---------- */
+let icsText = store.get("ics", "");
+let overrides = store.get("overrides", {}); // course title -> building number
+const SAMPLE = [
+  { day: 0, start: "10:00", end: "12:00", title: "מבוא למדעי המחשב", b: "503", room: "11" },
+  { day: 0, start: "12:15", end: "13:45", title: "אלגברה לינארית", b: "216", room: "201" },
+  { day: 0, start: "14:00", end: "16:00", title: "סדנת כתיבה אקדמית", b: "1004", room: "3" },
+  { day: 1, start: "09:00", end: "11:00", title: "מבוא לסטטיסטיקה", b: "504", room: "12" },
+  { day: 1, start: "11:15", end: "12:45", title: "פסיכולוגיה כללית", b: "902", room: "1" },
+  { day: 2, start: "12:00", end: "14:00", title: "תולדות עם ישראל", b: "410", room: "8" },
+  { day: 3, start: "10:00", end: "11:30", title: "מבוא לכלכלה", b: "504", room: "1" },
+  { day: 3, start: "11:45", end: "13:15", title: "חשבון אינפיניטסימלי", b: "216", room: "104" },
+  { day: 3, start: "16:00", end: "18:00", title: "תרגול מבוא למדמ\"ח", b: "604", room: "2" },
+  { day: 4, start: "08:30", end: "10:00", title: "אנגלית מתקדמים", b: "1004", room: "12" },
+  { day: 4, start: "13:00", end: "15:00", title: "סמינר מחקר", b: "605", room: "4" },
+];
+const isSample = () => !icsText;
+function weeklyToOcc(list, from, to, src) {
+  const out = [];
+  for (let d = new Date(from.getFullYear(), from.getMonth(), from.getDate()); d <= to; d.setDate(d.getDate() + 1)) {
+    for (const c of list) if (c.day === d.getDay()) {
+      const [sh, sm] = c.start.split(":").map(Number), [eh, em] = c.end.split(":").map(Number);
+      out.push({ title: c.title, b: c.b, room: c.room || "", start: new Date(d.getFullYear(), d.getMonth(), d.getDate(), sh, sm), end: new Date(d.getFullYear(), d.getMonth(), d.getDate(), eh, em), src, id: c.id });
+    }
+  }
+  return out;
+}
+let OCC = [];
+function rebuildSchedule() {
+  const now = new Date(), from = new Date(now.getTime() - 86400000 * 1), to = new Date(now.getTime() + 86400000 * 21);
+  let occ = [];
+  if (isSample()) occ = weeklyToOcc(SAMPLE, from, to, "sample");
+  else {
+    if (icsText) {
+      try {
+        for (const e of expandICS(icsText, from, to)) {
+          const f = findBuilding(e.location) || findBuilding(e.title) || findBuilding(e.desc);
+          occ.push({ title: e.title, b: f?.b || null, room: f?.room || "", location: e.location, start: e.start, end: e.end, src: "ics" });
+        }
+      } catch (err) { console.error(err); }
+    }
+  }
+  for (const o of occ) if (overrides[o.title]) o.b = overrides[o.title];
+  OCC = occ.sort((a, b) => a.start - b.start);
+  $("sample-banner").hidden = !isSample();
+}
+
+/* ---------- helpers ---------- */
+const hm = (d) => d.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", hour12: false });
+const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+function minsText(m) {
+  m = Math.round(m); if (m < 60) return m + " דק'";
+  const h = Math.floor(m / 60), r = m % 60;
+  if (h >= 24) { const d = Math.round(h / 24); return d === 1 ? "יום" : d + " ימים"; }
+  return (h === 1 ? "שעה" : h + " שעות") + (r ? " ו־" + r + " דק'" : "");
+}
+function chip(num, small) {
+  const b = BLD.get(num), s = document.createElement("span");
+  s.className = "bchip"; s.textContent = num || "?";
+  s.style.background = b ? `var(--a-${b.a})` : "var(--line)";
+  s.style.color = b && !AREA_DARK_TEXT.has(b.a) ? "#ffffff" : "#15281e";
+  return s;
+}
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) { if (k === "class") e.className = v; else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else if (v !== false && v != null) e.setAttribute(k, v); }
+  for (const k of kids.flat()) if (k != null && k !== false) e.append(k.nodeType ? k : document.createTextNode(k));
+  return e;
+}
+const ICONS = {
+  cafe: '<path d="M3 6h9v4a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V6Zm9 1h1.5a2 2 0 0 1 0 4H12" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  food: '<path d="M4 2v6a2 2 0 0 0 4 0V2M6 8v6M11 2c-1.5 1-2 3-2 5h2v7" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  toilets: '<circle cx="5" cy="3" r="1.5" fill="currentColor"/><circle cx="11" cy="3" r="1.5" fill="currentColor"/><path d="M5 6v8M11 6l-2 5h4l-2-5v8" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  water: '<path d="M8 2s4 4.5 4 7.5a4 4 0 0 1-8 0C4 6.5 8 2 8 2Z" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  shop: '<path d="M3 5h10l-1 9H4L3 5Zm2 0a3 3 0 0 1 6 0" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  gate: '<path d="M3 14V4h10v10M8 4v10" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+};
+ICONS.atm = '<rect x="2" y="4" width="12" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8" cy="8" r="1.8" fill="currentColor"/>';
+ICONS.worship = '<path d="M8 2l1.8 3.6 4 .6-2.9 2.8.7 4L8 11.1 4.4 13l.7-4L2.2 6.2l4-.6L8 2Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>';
+ICONS.service = '<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.4M8 11.6v.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>';
+const icon = (k) => `<svg viewBox="0 0 16 16" aria-hidden="true">${ICONS[k === "food" ? "food" : k] || ICONS.gate}</svg>`;
+ICONS.bus = '<rect x="3" y="2" width="10" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 7.5h10M5.5 12v2M10.5 12v2" stroke="currentColor" stroke-width="1.6"/>';
+const KIND_LABEL = { bus: "תחנת אוטובוס", cafe: "בית קפה", food: "אוכל", atm: "כספומט", parking: "חניה", shuttle: "תחנת הסעות", worship: "מקום תפילה", service: "מרכז שירות לסטודנטים", toilets: "שירותים", water: "ברזיית מים", gate: "שער", shop: "מכולת" };
+const KIND_WORDS = { bus: "אוטובוס תחנה bus", cafe: "קפה בית קפה אוכל מסעדה cafe coffee food", food: "אוכל מסעדה מזנון קפה food restaurant", atm: "כספומט בנק כסף atm", parking: "חניה חניון רכב parking",
+  shuttle: "הסעה הסעות שאטל תחנה shuttle", worship: "תפילה בית כנסת מסגד כנסייה prayer synagogue", service: "מרכז שירות גיוס דיקן service", toilets: "שירותים toilet wc", water: "מים ברזייה water", gate: "שער כניסה gate", shop: "מכולת קיוסק shop" };
+const MAP_KINDS = new Set(["cafe", "food", "atm", "parking", "shuttle", "worship", "service", "bus"]);
+const nearB = (c) => C.buildings.reduce((a, b) => (Math.hypot(b.c[0] - c[0], b.c[1] - c[1]) < Math.hypot(a.c[0] - c[0], a.c[1] - c[1]) ? b : a)).n;
+C.pois.forEach((p, i) => { p.i = i; if (!p.near && !["gate", "shuttle", "bus"].includes(p.k)) p.near = nearB(p.c); });
+const GENERIC = new Set(["חניון", "מזנון", "בית קפה", "כספומט", "שירותים", "ברזיית מים"]);
+function placeTitle(p) { return GENERIC.has(p.name) && p.near ? p.name + " ליד " + p.near : p.name; }
+function placeChip(p) {
+  const s = document.createElement("span"); s.className = "bchip pchip";
+  if (p.k === "parking") s.textContent = "P"; else if (p.k === "shuttle") { s.textContent = p.name.replace(/\D+/g, ""); s.classList.add("shuttle"); } else s.innerHTML = icon(p.k);
+  return s;
+}
+
+/* ---------- start point ---------- */
+let gps = null, gpsState = "off"; // off | asking | on | denied
+let fromChoice = store.get("from", "prev") === "gps" ? "gps" : "prev";
+const PREV_WINDOW_MIN = 120; // a class that ended up to this long before counts as "where I am now"
+function distToCampus(x, y) { // metres from the campus fence, 0 inside
+  const poly = C.campus; let inside = false, best = Infinity;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [x1, y1] = poly[i], [x2, y2] = poly[j];
+    if ((y1 > y) !== (y2 > y) && x < (x2 - x1) * (y - y1) / (y2 - y1) + x1) inside = !inside;
+    const dx = x2 - x1, dy = y2 - y1, t = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy || 1)));
+    best = Math.min(best, Math.hypot(x - x1 - t * dx, y - y1 - t * dy));
+  }
+  return inside ? 0 : best;
+}
+function fromGPS() {
+  if (!gps) { if (gpsState === "off") setTimeout(askGPS, 0); return { noGps: true, label: "המיקום שלי" }; }
+  const [x, y] = toXY(gps.lat, gps.lon), d = distToCampus(x, y);
+  if (d > C.zone) return { far: true, km: d / 1000, label: "המיקום שלי" }; // too far for a walking route
+  return { node: nearestNode(x, y), label: d > 0 ? "המיקום שלי (מחוץ לקמפוס)" : "המיקום שלי", xy: [x, y] };
+}
+function prevUsable(prevOcc, at) { return !!(prevOcc && prevOcc.b && BLD.has(prevOcc.b) && (at - prevOcc.end) / 60000 <= PREV_WINDOW_MIN); }
+function startPoint(target, prevOcc, at) {
+  if (fromChoice === "prev" && prevUsable(prevOcc, at))
+    return { node: BLD.get(prevOcc.b).g, label: prevOcc.b === target ? "השיעור הקודם (אותו בניין)" : "השיעור הקודם, " + prevOcc.b };
+  return fromGPS();
+}
+function lastClassBefore(now) { let p = null; for (const o of OCC) if (sameDay(o.start, now) && o.start <= now) p = o; return p; }
+function askGPS() {
+  if (!navigator.geolocation) { gpsState = "denied"; render(); return; }
+  gpsState = "asking"; render();
+  try {
+    navigator.geolocation.watchPosition(
+      (p) => { gps = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy }; gpsState = "on"; render(); },
+      () => { gpsState = "denied"; render(); },
+      { enableHighAccuracy: true, maximumAge: 15000, timeout: 15000 });
+  } catch { gpsState = "denied"; render(); }
+}
+
+/* ---------- map ---------- */
+function inPoly(x, y, poly) { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [x1, y1] = poly[i], [x2, y2] = poly[j]; if ((y1 > y) !== (y2 > y) && x < (x2 - x1) * (y - y1) / (y2 - y1) + x1) c = !c; } return c; }
+// small info box over a tapped building or place; navigation starts only from its button
+const popup = el("div", { class: "popup", hidden: "", role: "dialog", "aria-label": "פרטי מקום" });
+let popupAt = null;
+function buildingItem(b) {
+  return { c: b.c, chip: chip(b.n), title: b.he, sub: [b.en, b.approx ? "מיקום משוער" : null].filter(Boolean).join(" · "), go: () => showBuilding(b.n) };
+}
+function placeItem(p) {
+  return { c: p.c, chip: placeChip(p), title: placeTitle(p), sub: [KIND_LABEL[p.k], p.near ? "ליד בניין " + p.near : null, p.approx ? "מיקום משוער" : null].filter(Boolean).join(" · "), go: () => showPlace(p) };
+}
+function openPopup(it) {
+  popupAt = it.c;
+  popup.replaceChildren(
+    el("div", { class: "pop-head" }, it.chip, el("div", { class: "pop-t" }, el("b", {}, it.title), it.sub ? el("span", {}, it.sub) : null),
+      el("button", { type: "button", class: "pop-x", "aria-label": "סגירה", onclick: closePopup }, "×")),
+    el("button", { type: "button", class: "btn primary", onclick: () => { closePopup(); it.go(); } }, "ניווט לכאן"));
+  popup.hidden = false; placePopup();
+}
+function closePopup() { popupAt = null; popup.hidden = true; }
+function placePopup() {
+  if (!popupAt || !view || popup.hidden) return;
+  const box = $("mapbox"), W = box.clientWidth, H = box.clientHeight;
+  const x = (popupAt[0] - view.x) / view.w * W, y = (popupAt[1] - view.y) / view.h * H;
+  if (x < 0 || x > W || y < 0 || y > H) { popup.style.visibility = "hidden"; return; }
+  popup.style.visibility = "";
+  const pw = popup.offsetWidth, ph = popup.offsetHeight, cx = Math.min(Math.max(x, pw / 2 + 8), W - pw / 2 - 8);
+  popup.classList.toggle("below", y - ph - 16 < 8); // no room above: open under the point
+  popup.style.left = cx + "px"; popup.style.top = y + "px"; popup.style.setProperty("--arrow", (x - cx) + "px");
+}
+const svg = $("map");
+let view = null;
+const ns = (tag, attrs) => { const e = document.createElementNS(SVGNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+const pts = (list) => list.map(([x, y]) => x.toFixed(1) + "," + y.toFixed(1)).join(" ");
+function drawBase() {
+  $("m-base").append(ns("polygon", { points: pts(C.campus), fill: "var(--lawn)", stroke: "var(--lawn-edge)", "stroke-width": 1, "vector-effect": "non-scaling-stroke" }));
+  const walk = $("m-walk"), by = { road: [], foot: [], steps: [] };
+  for (const [k, ids] of C.draw) if (ids.length > 1) by[k].push("M" + ids.map((i) => NODES[i][0].toFixed(1) + " " + NODES[i][1].toFixed(1)).join("L"));
+  for (const k of ["road", "foot", "steps"]) walk.append(ns("path", { d: by[k].join(""), class: "w-" + k }));
+  const bg = $("m-bldg");
+  for (const o of C.others) bg.append(ns("polygon", { points: pts(o.p), class: "b-other" }));
+  for (const b of C.buildings) {
+    if (b.p.length) for (const p of b.p) bg.append(ns("polygon", { points: pts(p), class: "b-shape", fill: `color-mix(in srgb, var(--a-${b.a}) 55%, var(--bldg))`, "data-b": b.n }));
+    else bg.append(ns("circle", { cx: b.c[0], cy: b.c[1], r: 14, class: "b-est", "data-b": b.n }));
+  }
+  const pg = $("m-poi");
+  for (const p of C.pois) if (p.k === "gate") {
+    const g = ns("g", { transform: `translate(${p.c[0]},${p.c[1]})`, class: "gate" });
+    g.append(ns("rect", { x: -5, y: -5, width: 10, height: 10, rx: 2, fill: "var(--card)", stroke: "var(--ink)", "stroke-width": 1.2, "vector-effect": "non-scaling-stroke" }));
+    pg.append(g);
+  }
+  for (const p of C.pois) if (MAP_KINDS.has(p.k)) {
+    const g = ns("g", { transform: `translate(${p.c[0]},${p.c[1]})`, class: "poi" });
+    if (p.k === "shuttle") {
+      g.append(ns("rect", { x: -8, y: -8, width: 16, height: 16, rx: 2, fill: "#7a1c24" }));
+      const t = ns("text", { x: 0, y: 0.5, "text-anchor": "middle", "dominant-baseline": "central", "font-size": 10, "font-weight": 700, fill: "#ffffff" }); t.textContent = p.name.replace(/\D+/g, ""); g.append(t);
+    } else {
+      g.append(ns("circle", { r: 8, fill: "var(--ink)" }));
+      if (p.k === "parking") { const t = ns("text", { x: 0, y: 0.5, "text-anchor": "middle", "dominant-baseline": "central", "font-size": 11, "font-weight": 700, fill: "var(--paper)" }); t.textContent = "P"; g.append(t); }
+      else { const ig = ns("g", { transform: "translate(-5.5,-5.5) scale(.69)", color: "var(--paper)" }); ig.innerHTML = ICONS[p.k]; g.append(ig); }
+    }
+    pg.append(g);
+  }
+  const lg = $("m-lbl");
+  for (const b of C.buildings) { const t = ns("text", { x: b.c[0], y: b.c[1], class: "lbl" }); t.textContent = b.n; lg.append(t); }
+  for (const p of GATES) { const t = ns("text", { x: p.c[0], y: p.c[1] - 14, class: "lbl gl" }); t.textContent = p.name.replace("שער ", ""); lg.append(t); }
+}
+function setView(v) {
+  const box = $("mapbox").getBoundingClientRect(), aspect = box.width / Math.max(box.height, 1);
+  if (v.w / v.h > aspect) { const h = v.w / aspect; v = { x: v.x, y: v.y - (h - v.h) / 2, w: v.w, h }; } else { const w = v.h * aspect; v = { x: v.x - (w - v.w) / 2, y: v.y, w, h: v.h }; }
+  view = v;
+  svg.setAttribute("viewBox", `${v.x} ${v.y} ${v.w} ${v.h}`);
+  const px = v.w / Math.max(box.width, 1); // metres per screen pixel
+  $("m-lbl").setAttribute("font-size", (13 * px).toFixed(2));
+  $("m-lbl").setAttribute("stroke-width", (3 * px).toFixed(2));
+  for (const g of document.querySelectorAll("#m-poi .poi")) g.style.display = px > 1.4 ? "none" : "";
+  document.querySelectorAll("#m-poi > g").forEach((g) => { const t = g.getAttribute("transform").replace(/ scale\(.*\)/, ""); g.setAttribute("transform", t + ` scale(${px.toFixed(3)})`); });
+  for (const t of document.querySelectorAll("#m-lbl .gl")) t.style.display = px > 2.2 ? "none" : "";
+  const you = $("m-top").querySelector(".you-dot"); if (you) you.setAttribute("r", 7 * px);
+  placePopup();
+  for (const m of $("m-top").querySelectorAll(".pin")) m.setAttribute("r", 8 * px);
+}
+function fit(points, pad = 40) {
+  const xs = points.map((p) => p[0]), ys = points.map((p) => p[1]);
+  const minx = Math.min(...xs) - pad, maxx = Math.max(...xs) + pad, miny = Math.min(...ys) - pad, maxy = Math.max(...ys) + pad;
+  setView({ x: minx, y: miny, w: Math.max(maxx - minx, 160), h: Math.max(maxy - miny, 160) });
+}
+const fitCampus = () => fit(C.campus, 20);
+function zoomAt(f, cx, cy) {
+  if (cx == null) { cx = view.x + view.w / 2; cy = view.y + view.h / 2; }
+  const w = Math.min(Math.max(view.w * f, 80), 2400), k = w / view.w;
+  setView({ x: cx - (cx - view.x) * k, y: cy - (cy - view.y) * k, w, h: view.h * k });
+}
+function svgPoint(ev) { const r = svg.getBoundingClientRect(); return [view.x + (ev.clientX - r.left) / r.width * view.w, view.y + (ev.clientY - r.top) / r.height * view.h]; }
+(function gestures() {
+  const ptrs = new Map(); let last = null, moved = 0;
+  svg.addEventListener("pointerdown", (e) => { svg.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); moved = 0; svg.classList.add("drag"); });
+  svg.addEventListener("pointermove", (e) => {
+    if (!ptrs.has(e.pointerId)) return;
+    const r = svg.getBoundingClientRect(), k = view.w / r.width, prevP = ptrs.get(e.pointerId);
+    if (ptrs.size === 1) { const dx = e.clientX - prevP[0], dy = e.clientY - prevP[1]; moved += Math.abs(dx) + Math.abs(dy); setView({ ...view, x: view.x - dx * k, y: view.y - dy * k }); }
+    ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+    if (ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]), mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+      if (last) { zoomAt(last / d, view.x + (mid[0] - r.left) * k, view.y + (mid[1] - r.top) * k); moved += 10; }
+      last = d;
+    }
+  });
+  const up = (e) => { ptrs.delete(e.pointerId); if (ptrs.size < 2) last = null; if (!ptrs.size) svg.classList.remove("drag"); };
+  svg.addEventListener("pointerup", (e) => {
+    if (moved < 6 && ptrs.size === 1) { // tap on a building selects it
+      const [x, y] = svgPoint(e), px = view.w / svg.getBoundingClientRect().width;
+      if (px <= 1.4) {
+        const hit = C.pois.filter((p) => MAP_KINDS.has(p.k)).find((p) => Math.hypot(p.c[0] - x, p.c[1] - y) < 12 * px);
+        if (hit) { openPopup(placeItem(hit)); up(e); return; }
+      }
+      // a tap inside a building's outline wins; otherwise the nearest label within reach (dashed, estimated buildings)
+      let best = C.buildings.find((b) => b.p.some((poly) => inPoly(x, y, poly))) || null;
+      if (!best) { let bd = Math.max(20, 14 * px); for (const b of C.buildings) { const d = Math.hypot(b.c[0] - x, b.c[1] - y); if (d < bd) { bd = d; best = b; } } }
+      if (best) openPopup(buildingItem(best)); else closePopup();
+    }
+    up(e);
+  });
+  svg.addEventListener("pointercancel", up);
+  svg.addEventListener("wheel", (e) => { e.preventDefault(); const [x, y] = svgPoint(e); zoomAt(e.deltaY > 0 ? 1.15 : 1 / 1.15, x, y); }, { passive: false });
+  $("z-in").onclick = () => zoomAt(1 / 1.4); $("z-out").onclick = () => zoomAt(1.4);
+  $("z-fit").onclick = () => (lastRoutePts ? fit(lastRoutePts) : fitCampus());
+})();
+let lastRoutePts = null, lastRouteKey = "";
+function drawRoute(r, targetNum, start, endC) {
+  const g = $("m-route"), top = $("m-top"); g.replaceChildren(); top.replaceChildren();
+  document.querySelectorAll(".b-target").forEach((e) => e.classList.remove("b-target"));
+  if (targetNum) document.querySelectorAll(`[data-b="${CSS.escape(targetNum)}"]`).forEach((e) => e.classList.add("b-target"));
+  if (start?.xy) top.append(ns("circle", { cx: start.xy[0], cy: start.xy[1], r: 7, fill: "var(--you)", stroke: "var(--card)", "stroke-width": 2, "vector-effect": "non-scaling-stroke", class: "you-dot" }));
+  if (!r) { // no route: just bring the destination into view (once, so panning isn't undone on refresh)
+    lastRoutePts = null; const c = endC || BLD.get(targetNum)?.c, key = c ? "pt>" + c : "";
+    if (c && key !== lastRouteKey) { lastRouteKey = key; fit([c], 150); } else setView(view);
+    return;
+  }
+  const P = r.path.map((i) => NODES[i]); const t = BLD.get(targetNum);
+  if (endC) P.push(endC); else if (t) P.push(t.c);
+  const d = "M" + P.map(([x, y]) => x.toFixed(1) + " " + y.toFixed(1)).join("L");
+  g.append(ns("path", { d, class: "route-casing" }), ns("path", { d, class: "route" }));
+  top.append(ns("circle", { cx: P[0][0], cy: P[0][1], r: 8, fill: "var(--card)", stroke: "var(--route)", "stroke-width": 3, "vector-effect": "non-scaling-stroke", class: "pin" }));
+  top.append(ns("circle", { cx: P[P.length - 1][0], cy: P[P.length - 1][1], r: 8, fill: "var(--route)", stroke: "var(--card)", "stroke-width": 2, "vector-effect": "non-scaling-stroke", class: "pin" }));
+  const key = r.path[0] + ">" + (targetNum || endC);
+  lastRoutePts = start?.xy ? [...P, start.xy] : P;
+  if (key !== lastRouteKey) { lastRouteKey = key; fit(lastRoutePts); } else setView(view);
+}
+
+/* ---------- rendering ---------- */
+let focusOcc = null;      // a class the user tapped in the timeline
+let focusBuilding = null; // a building from search / map tap
+let focusPlace = null;    // a café, ATM, parking lot, shuttle stop… from search / map tap
+let selectedDay = null;
+function currentAndNext(now) {
+  const cur = OCC.find((o) => o.start <= now && o.end > now);
+  const next = OCC.find((o) => o.start > now);
+  return { cur, next };
+}
+function prevOf(o) { const i = OCC.indexOf(o); for (let j = i - 1; j >= 0; j--) if (sameDay(OCC[j].start, o.start) && OCC[j].end <= o.start) return OCC[j]; return null; }
+function fromPicker(prevOcc, at) {
+  const prevOk = prevUsable(prevOcc, at), active = fromChoice === "prev" && prevOk ? "prev" : "gps";
+  const gpsSub = gpsState === "asking" ? "מאתר…" : gpsState === "denied" ? "לא זמין בדף הזה" : gpsState === "on" ? (fromGPS().far ? "רחוק מהקמפוס" : "פעיל") : "";
+  const opt = (v, title, sub, disabled) => el("button", { type: "button", role: "radio", "aria-checked": String(active === v), disabled: disabled ? "" : null,
+    onclick: () => { fromChoice = v; store.set("from", v); if (v === "gps" && gpsState === "off") askGPS(); render(); } }, el("b", {}, title), el("span", {}, sub || "\u00a0"));
+  return el("div", { class: "from" }, el("span", { class: "eyebrow" }, "יציאה מ"),
+    el("div", { class: "seg", role: "radiogroup", "aria-label": "יציאה מ" },
+      opt("prev", "השיעור הקודם", prevOk ? `בניין ${prevOcc.b} · עד ${hm(prevOcc.end)}` : "אין שיעור קודם היום", !prevOk),
+      opt("gps", "המיקום שלי", gpsSub)));
+}
+function locationStatus(start, occ, now) {
+  if (!start.noGps && !start.far) return null;
+  const head = start.far ? `רחוק מהקמפוס, כ־${start.km < 10 ? start.km.toFixed(1) : Math.round(start.km)} ק"מ`
+    : gpsState === "asking" ? "מאתר מיקום…" : "המיקום לא זמין בדף הזה";
+  const sub = occ && occ.start > now ? "השיעור מתחיל בעוד " + minsText((occ.start - now) / 60000) : "";
+  return el("div", { class: "status warn" }, el("span", {}, head), el("small", {}, sub));
+}
+function startNotes(start, extra) {
+  let t = "";
+  if (start.far) t = `המסלול יוצג כשתהיו עד ${C.zone} מ' מהקמפוס, למשל בתחנת האוטובוס.`;
+  else if (start.noGps) t = gpsState === "asking" ? "" : "המסלול יוצג כשהמיקום יהיה זמין. בדף שפתוח מכתובת משלו (למשל GitHub Pages) המיקום עובד.";
+  else t = "מסלול מ" + start.label + ". זמן ההליכה כולל מדרגות." + (extra || "");
+  return el("div", { class: "note" }, t);
+}
+function statsRow(occ, r) {
+  const walkMin = r ? Math.max(1, Math.ceil(r.minutes)) : null, stats = el("div", { class: "stats" });
+  if (occ) stats.append(el("div", { class: "stat" }, el("b", {}, hm(occ.start)), el("span", {}, "עד " + hm(occ.end))));
+  stats.append(el("div", { class: "stat" }, el("b", {}, walkMin ? walkMin + " דק'" : "–"), el("span", {}, "הליכה")));
+  stats.append(el("div", { class: "stat" }, el("b", {}, r ? Math.round(r.meters / 10) * 10 + " מ'" : "–"), el("span", {}, "מרחק")));
+  return stats;
+}
+function showRouteBtn(c) { return el("button", { class: "btn primary", type: "button", onclick: () => { fit(lastRoutePts || [c]); $("mapbox").scrollIntoView({ behavior: "smooth", block: "center" }); } }, "הצגת המסלול"); }
+function buildingPicker(title) {
+  const s = el("select", { "aria-label": "בניין עבור " + title });
+  s.append(el("option", { value: "" }, "בחירת בניין"));
+  for (const b of [...C.buildings].sort((a, b) => parseInt(a.n) - parseInt(b.n))) s.append(el("option", { value: b.n, selected: overrides[title] === b.n ? "" : null }, b.n + " · " + b.he));
+  s.onchange = () => { if (s.value) overrides[title] = s.value; else delete overrides[title]; store.set("overrides", overrides); rebuildSchedule(); render(); };
+  return s;
+}
+function renderPlace(now, box) {
+  const p = focusPlace, prevOcc = lastClassBefore(now), start = startPoint(null, prevOcc, now);
+  const r = start.node != null ? route(start.node, p.g) : null;
+  box.append(el("div", { class: "eyebrow" }, "ניווט אל"), el("h2", {}, placeTitle(p)));
+  box.append(el("div", { class: "where" }, placeChip(p), el("div", {},
+    el("div", { class: "bname" }, KIND_LABEL[p.k] + (p.near ? " · ליד בניין " + p.near : "")),
+    el("div", { class: "sub" }, p.approx ? "מיקום משוער לפי מפת הקמפוס" : "מתוך OpenStreetMap"))));
+  box.append(statsRow(null, r));
+  const st = locationStatus(start, null, now); if (st) box.append(st);
+  box.append(fromPicker(prevOcc, now));
+  box.append(el("div", { class: "row" }, showRouteBtn(p.c), el("button", { class: "btn", type: "button", onclick: () => { focusPlace = null; render(); } }, "חזרה לשיעור הבא")));
+  box.append(startNotes(start));
+  drawRoute(r, null, start, p.c);
+}
+function renderNext(now) {
+  const box = $("next"); box.replaceChildren();
+  if (focusPlace) return renderPlace(now, box);
+  const { cur, next } = currentAndNext(now);
+  let target = null, occ = null, eyebrow = "";
+  if (focusBuilding) { target = focusBuilding; eyebrow = "ניווט לבניין"; }
+  else if (focusOcc) { occ = focusOcc; target = occ.b; eyebrow = sameDay(occ.start, now) ? "שיעור שנבחר · היום" : "שיעור שנבחר · יום " + DAYS[occ.start.getDay()]; }
+  else if (next) { occ = next; target = next.b; eyebrow = sameDay(next.start, now) ? "השיעור הבא" : "השיעור הבא · יום " + DAYS[next.start.getDay()] + " " + next.start.toLocaleDateString("he-IL", { day: "numeric", month: "numeric" }); }
+  if (!target && !occ) { box.append(el("div", { class: "eyebrow" }, "השיעור הבא"), el("h2", {}, "אין שיעורים בשלושת השבועות הקרובים"), el("div", { class: "note" }, "השיעורים מגיעים מהיומן המחובר.")); drawRoute(null); return; }
+
+  const prevOcc = occ ? prevOf(occ) : lastClassBefore(now), at = occ ? occ.start : now;
+  const b = BLD.get(target);
+  box.append(el("div", { class: "eyebrow" }, eyebrow));
+  if (cur && !focusOcc && !focusBuilding) box.append(el("div", { class: "note" }, `עכשיו: ${cur.title}, עד ${hm(cur.end)}`));
+  box.append(el("h2", {}, occ ? occ.title : b ? b.he : "בניין " + target));
+  box.append(el("div", { class: "where" }, chip(target),
+    el("div", {}, el("div", { class: "bname" }, b ? b.he : occ?.location || "בניין לא זוהה"),
+      el("div", { class: "sub" }, [occ?.room ? "חדר " + occ.room : null, b?.en, b?.approx ? "מיקום משוער" : null].filter(Boolean).join(" · ")))));
+
+  if (!b) {
+    box.append(el("div", { class: "status warn" }, "לא זוהה בניין" + (occ?.location ? " למיקום \"" + occ.location + "\"" : "") + ". בוחרים אותו פעם אחת לכל מפגשי הקורס."));
+    if (occ) box.append(el("label", { class: "from" }, el("span", { class: "eyebrow" }, "בניין"), buildingPicker(occ.title)));
+    drawRoute(null); return;
+  }
+  const start = startPoint(target, prevOcc, at);
+  const r = start.node != null ? route(start.node, b.g) : null;
+  const walkMin = r ? Math.max(1, Math.ceil(r.minutes)) : null;
+  box.append(statsRow(occ, r));
+
+  const locSt = locationStatus(start, occ, now);
+  if (locSt) box.append(locSt);
+  else if (occ && r && occ.start > now) {
+    const until = (occ.start - now) / 60000, slack = until - walkMin - BUFFER_MIN;
+    const leaveAt = new Date(occ.start.getTime() - (walkMin + BUFFER_MIN) * 60000);
+    let cls = "ok", txt, sub = "יציאה ב־" + hm(leaveAt);
+    if (slack > 90) { txt = "מתחיל בעוד " + minsText(until); }
+    else if (slack > 5) { txt = "יציאה בעוד " + minsText(slack); cls = slack > 15 ? "ok" : "warn"; }
+    else if (slack >= -1) { txt = "הזמן לצאת"; cls = "warn"; sub = "מתחיל ב־" + hm(occ.start); }
+    else { txt = "איחור צפוי של " + minsText(-slack); cls = "late"; sub = "מתחיל ב־" + hm(occ.start); }
+    box.append(el("div", { class: "status " + cls }, el("span", {}, txt), el("small", {}, sub)));
+  } else if (occ && occ.start <= now && occ.end > now) {
+    box.append(el("div", { class: "status ok" }, el("span", {}, "השיעור מתקיים עכשיו"), el("small", {}, "עד " + hm(occ.end))));
+  }
+
+  box.append(fromPicker(prevOcc, at));
+  const acts = el("div", { class: "row" }, showRouteBtn(b.c));
+  if (focusOcc || focusBuilding) acts.append(el("button", { class: "btn", type: "button", onclick: () => { focusOcc = focusBuilding = null; render(); } }, "חזרה לשיעור הבא"));
+  box.append(acts);
+  box.append(startNotes(start, occ ? " זמן היציאה כולל " + BUFFER_MIN + " דק' למציאת הכיתה." : ""));
+  drawRoute(r, target, start);
+}
+function nearestCafes(fromNode, n = 2) {
+  const sp = shortest(fromNode);
+  return C.pois.filter((p) => (p.k === "cafe" || p.k === "food") && isFinite(sp.cost[p.g]))
+    .sort((a, b) => sp.cost[a.g] - sp.cost[b.g]).slice(0, n)
+    .map((p) => ({ p, min: Math.max(1, Math.round(sp.cost[p.g] / WALK_MPS / 60)) }));
+}
+function renderDays(now) {
+  const days = $("days"); days.replaceChildren();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (!selectedDay) selectedDay = today;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today); d.setDate(d.getDate() + i);
+    const has = OCC.some((o) => sameDay(o.start, d));
+    const label = i === 0 ? "היום" : i === 1 ? "מחר" : DAYS[d.getDay()];
+    days.append(el("button", { type: "button", "aria-pressed": String(sameDay(d, selectedDay)), onclick: () => { selectedDay = d; render(); } }, label, has ? el("span", { class: "dot" }) : null));
+  }
+}
+function renderTimeline(now) {
+  const list = $("timeline"); list.replaceChildren();
+  const day = OCC.filter((o) => sameDay(o.start, selectedDay));
+  const isToday = sameDay(selectedDay, now);
+  $("day-title").textContent = isToday ? "היום" : "יום " + DAYS[selectedDay.getDay()] + " " + selectedDay.toLocaleDateString("he-IL", { day: "numeric", month: "numeric" });
+  $("day-sum").textContent = day.length ? `${day.length} שיעורים · ${hm(day[0].start)}–${hm(day[day.length - 1].end)}` : "";
+  if (!day.length) { list.append(el("li", { class: "empty" }, "אין שיעורים ביום הזה.")); return; }
+  day.forEach((o, i) => {
+    if (i > 0) {
+      const p = day[i - 1], gapMin = (o.start - p.end) / 60000;
+      const r = p.b && o.b && BLD.has(p.b) && BLD.has(o.b) ? route(BLD.get(p.b).g, BLD.get(o.b).g) : null;
+      const walk = r ? Math.max(1, Math.ceil(r.minutes)) : null;
+      const li = el("li", { class: "gap" + (walk != null && walk > gapMin ? " tight" : "") });
+      li.append(el("div", {}, walk != null ? (p.b === o.b ? `הפסקה של ${minsText(gapMin)} · אותו בניין` : `הפסקה של ${minsText(gapMin)} · ${walk} דק' הליכה ל־${o.b}`) + (walk > gapMin ? " · לא מספיק זמן" : "") : `הפסקה של ${minsText(gapMin)}`));
+      if (o.b && BLD.has(o.b) && gapMin - (walk || 0) >= 20) {
+        const chips = el("div", { class: "chips" });
+        for (const n of nearestCafes(BLD.get(o.b).g)) {
+          const c = el("button", { class: "chip", type: "button", onclick: () => showPlace(n.p) }); c.innerHTML = icon(n.p.k); c.append(`${placeTitle(n.p)} · ${n.min} דק' מ־${o.b}`); chips.append(c);
+        }
+        li.append(chips);
+      }
+      list.append(li);
+    }
+    const state = isToday && o.end <= now ? " past" : isToday && o.start <= now && o.end > now ? " now" : "";
+    const btn = el("button", { type: "button", class: "cls" + state, onclick: () => { focusOcc = o; focusBuilding = null; focusPlace = null; render(); $("next").scrollIntoView({ behavior: "smooth", block: "nearest" }); } },
+      el("div", { class: "t" }, hm(o.start), el("small", {}, hm(o.end))),
+      el("div", { class: "ti" }, el("b", {}, o.title), el("span", {}, o.b && BLD.has(o.b) ? BLD.get(o.b).he + (o.room ? " · חדר " + o.room : "") : o.location || "בניין לא זוהה")),
+      chip(o.b));
+    list.append(el("li", {}, btn));
+  });
+}
+function showBuilding(num) { closePopup(); focusBuilding = num; focusOcc = null; focusPlace = null; render(); }
+function showPlace(p) { closePopup(); focusPlace = p; focusBuilding = null; focusOcc = null; render(); $("next").scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+function render() {
+  const now = new Date();
+  renderNext(now); renderDays(now); renderTimeline(now);
+}
+
+/* ---------- search ---------- */
+$("q").addEventListener("input", () => {
+  const q = $("q").value.trim().toLowerCase(), out = $("results"); out.replaceChildren();
+  if (!q) return;
+  const hits = C.buildings.filter((b) => b.n.toLowerCase().startsWith(q) || (b.he || "").toLowerCase().includes(q) || (b.en || "").toLowerCase().includes(q)
+    || (/ספרי|library/.test(q) && b.n === "401")).slice(0, 6);
+  // places: match their name or their kind ("קפה", "כספומט", "הסעות 5"), nearest first
+  const now = new Date(), start = startPoint(null, lastClassBefore(now), now), sp = start.node != null ? shortest(start.node) : null;
+  const places = C.pois.filter((p) => KIND_LABEL[p.k] && (placeTitle(p).toLowerCase().includes(q) || KIND_WORDS[p.k].toLowerCase().split(" ").some((w) => w.startsWith(q) || (q.length > 2 && q.startsWith(w)))
+    || (q.includes(" ") && (KIND_WORDS[p.k] + " " + placeTitle(p)).toLowerCase().includes(q))))
+    .sort((a, b) => (sp ? sp.cost[a.g] - sp.cost[b.g] : placeTitle(a).localeCompare(placeTitle(b), "he", { numeric: true }))).slice(0, 6);
+  if (!hits.length && !places.length) out.append(el("div", { class: "empty" }, "לא נמצא. אפשר לחפש מספר בניין (504), שם (כלכלה), או מקום: קפה, כספומט, חניה, הסעות."));
+  for (const p of places) {
+    const min = sp && isFinite(sp.cost[p.g]) ? Math.max(1, Math.round(sp.cost[p.g] / WALK_MPS / 60)) : null;
+    out.append(el("button", { type: "button", class: "res", onclick: () => showPlace(p) }, placeChip(p),
+      el("div", {}, placeTitle(p), el("span", {}, [KIND_LABEL[p.k], p.near && p.k !== "parking" ? "ליד " + p.near : null, min ? min + " דק' מ" + start.label : null].filter(Boolean).join(" · ")))));
+  }
+  for (const b of hits) out.append(el("button", { type: "button", class: "res", onclick: () => { showBuilding(b.n); $("next").scrollIntoView({ behavior: "smooth", block: "nearest" }); } }, chip(b.n), el("div", {}, b.he, el("span", {}, b.en + (b.approx ? " · מיקום משוער" : "")))));
+});
+
+/* ---------- calendar link ---------- */
+// Most calendar services (Google included) don't let other web pages read their feeds directly,
+// so after a direct attempt the page goes through CAL_PROXY (tools/calendar-proxy.js) when one is configured.
+const CAL_PROXY = "";
+const dlg = $("dlg");
+function msg(text, ok) { const m = $("ics-msg"); m.hidden = false; m.className = "msg " + (ok ? "ok" : "err"); m.textContent = text; }
+async function fetchCalendar(url) {
+  const tries = [url]; if (CAL_PROXY) tries.push(CAL_PROXY + "?url=" + encodeURIComponent(url));
+  let last;
+  for (const u of tries) {
+    try { const res = await fetch(u, { cache: "no-store" }); if (!res.ok) throw new Error("HTTP " + res.status); const t = await res.text(); if (/BEGIN:VCALENDAR/i.test(t)) return t; last = new Error("not a calendar"); }
+    catch (e) { last = e; }
+  }
+  throw last;
+}
+function syncDialog() {
+  const url = store.get("icsUrl", ""); $("ics-url").value = url;
+  $("ics-load").textContent = url ? "עדכון" : "חיבור"; $("ics-remove").hidden = !url;
+  $("open-sched").textContent = url ? "היומן מחובר" : "חיבור יומן";
+}
+async function connect(url) {
+  url = url.trim().replace(/^webcal:\/\//i, "https://");
+  if (!/^https:\/\//i.test(url)) { msg("צריך קישור שמתחיל ב־https:// או webcal://", false); return; }
+  msg("טוען את היומן…", true);
+  try {
+    const text = await fetchCalendar(url);
+    icsText = text; store.set("ics", text); store.set("icsUrl", url); rebuildSchedule(); spCache.clear(); syncDialog();
+    const now = new Date(), evs = expandICS(text, now, new Date(now.getTime() + 86400000 * 21));
+    const found = evs.filter((e) => findBuilding(e.location) || findBuilding(e.title)).length;
+    msg(`היומן מחובר: ${evs.length} שיעורים בשלושת השבועות הקרובים, בניין זוהה ב־${found} מהם.`, true);
+    render();
+  } catch (e) {
+    console.warn("calendar fetch failed", e);
+    msg("לא הצלחנו לטעון את היומן מהקישור. בודקים שזה הקישור בפורמט iCal (מסתיים ב־.ics) ומנסים שוב.", false);
+  }
+}
+$("ics-load").onclick = () => connect($("ics-url").value);
+$("ics-remove").onclick = () => { icsText = ""; overrides = {}; store.set("ics", ""); store.set("icsUrl", ""); store.set("overrides", {}); rebuildSchedule(); syncDialog(); render(); msg("היומן נותק. מוצגת מערכת לדוגמה.", true); };
+const openDlg = () => { syncDialog(); $("ics-msg").hidden = true; try { dlg.showModal(); } catch { dlg.setAttribute("open", ""); } };
+$("open-sched").onclick = openDlg; $("sample-connect").onclick = openDlg;
+syncDialog();
+
+/* ---------- boot ---------- */
+drawBase();
+rebuildSchedule();
+fitCampus();
+render();
+
+const u = store.get("icsUrl", ""); if (u) fetchCalendar(u).then((t) => { icsText = t; store.set("ics", t); rebuildSchedule(); render(); }).catch(() => {}); // keep the saved copy if offline
+setInterval(() => { const d = new Date(); if (!sameDay(d, selectedDay || d) && !focusOcc) selectedDay = null; rebuildSchedule(); render(); }, 30000);
+$("mapbox").append(popup);
+new ResizeObserver(() => view && setView(view)).observe($("mapbox"));
+</script>
