@@ -9,6 +9,6 @@ body = (root / "src/app.html").read_text().replace("/*CAMPUS_DATA*/", data)
 head, sep, rest = body.partition("</style>")
 doc = ('<!doctype html>\n<html lang="he" dir="rtl">\n<head>\n<meta charset="utf-8">\n'
        '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
-       '<meta name="theme-color" content="#0d6e46">\n' + head + sep + '\n</head>\n<body>\n' + rest + '\n</body>\n</html>\n')
+       '<meta name="theme-color" content="#f4762a">\n' + head + sep + '\n</head>\n<body>\n' + rest + '\n</body>\n</html>\n')
 (root / "index.html").write_text(doc)
 print("index.html", len(doc.encode()) // 1024, "KB; artifact.html", len(body.encode()) // 1024, "KB")
