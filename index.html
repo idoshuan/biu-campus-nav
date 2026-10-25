@@ -202,23 +202,6 @@ ol.timeline { list-style: none; margin: 0; padding: 0; display: grid; }
 .pop-x { border: 0; background: none; font-size: 22px; line-height: 1; cursor: pointer; color: var(--muted); padding: 0 2px; }
 .popup .btn { width: 100%; }
 
-/* love gate */
-.gate { min-height: calc(100vh - 64px); display: grid; place-items: center; padding-block: 24px; }
-.gate-card { width: min(440px, 100%); background: var(--card); border: 2px solid var(--edge); border-radius: 28px; box-shadow: var(--stick); padding: 26px 22px; display: grid; gap: 16px; justify-items: center; text-align: center; animation: pop .5s cubic-bezier(.2, 1.4, .4, 1); }
-.gate-card.shake { animation: shake .45s; }
-@keyframes shake { 20%, 60% { transform: translateX(-9px) rotate(-1deg); } 40%, 80% { transform: translateX(9px) rotate(1deg); } }
-.gate-heart { width: 74px; height: 66px; color: var(--edge); animation: beat 1.4s ease-in-out infinite; }
-@keyframes beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.14); } 30% { transform: scale(1); } 45% { transform: scale(1.08); } }
-.gate-card .eyebrow { justify-self: center; }
-.gate-card h1 { font: 700 25px/1.25 var(--f-display); margin: 0; text-wrap: balance; }
-.answers { display: grid; gap: 10px; width: 100%; }
-.answers .btn { width: 100%; font-size: 18px; padding: 12px 18px; font-variant-numeric: tabular-nums; }
-.answers .btn.wrong { background: var(--soft); color: var(--muted); }
-.answers .btn.right { background: var(--coral); color: var(--coral-ink); }
-.gate-msg { min-height: 1.5em; margin: 0; font: 600 16px/1.4 var(--f-display); color: var(--grape); }
-.heart-fx { position: fixed; z-index: 50; top: -40px; width: 26px; height: 24px; pointer-events: none; animation: fall linear forwards; }
-@keyframes fall { to { transform: translateY(110vh) rotate(var(--spin)); } }
-
 footer { font-size: 12px; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .route { stroke-dasharray: none; } }
 </style>
@@ -226,17 +209,7 @@ footer { font-size: 12px; color: var(--muted); }
 <body>
 
 
-<div class="gate" id="gate">
-  <div class="gate-card">
-    <svg class="gate-heart" viewBox="0 0 64 58" aria-hidden="true"><path d="M32 54S5 37.5 5 19.5A13.5 13.5 0 0 1 32 12a13.5 13.5 0 0 1 27 7.5C59 37.5 32 54 32 54Z" fill="#f4762a" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/><path d="M17 20a6 6 0 0 1 6-6" fill="none" stroke="#ffe8cd" stroke-width="3.5" stroke-linecap="round"/></svg>
-    <span class="eyebrow">שאלת אבטחה</span>
-    <h1>כמה פעמים אורי אמרה לעידו שהיא אוהבת אותו?</h1>
-    <div class="answers" id="answers" role="group" aria-label="תשובות"></div>
-    <p class="gate-msg" id="gate-msg" aria-live="polite"></p>
-  </div>
-</div>
-
-<div class="wrap" id="app" hidden>
+<div class="wrap" id="app">
   <div class="panel">
     <header class="top">
       <svg class="sun" viewBox="0 0 64 64" aria-hidden="true">
@@ -995,60 +968,17 @@ async function loadCalendar() {
   // offline: keep the copy saved on this phone
 }
 
-/* ---------- love gate ---------- */
-const GATE = [
-  { a: "17", m: "רק 17? הרבה יותר, את יודעת את זה" },
-  { a: "1,000", m: "קר… תכפילי בהרבה" },
-  { a: "5,000,000", ok: true },
-  { a: "מיליון", m: "חם! אבל עוד לא" },
-  { a: "אינסוף", m: "חמוד, אבל עידו סופר במדויק" },
-];
-const HEART = '<svg viewBox="0 0 64 58"><path d="M32 54S5 37.5 5 19.5A13.5 13.5 0 0 1 32 12a13.5 13.5 0 0 1 27 7.5C59 37.5 32 54 32 54Z" fill="currentColor"/></svg>';
-function heartRain() {
-  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  const colors = ["#f4762a", "#ffb27a", "#ffd6ba", "#ff8a8a", "#d9541a"];
-  for (let i = 0; i < 46; i++) {
-    const h = document.createElement("span"); h.className = "heart-fx"; h.innerHTML = HEART;
-    h.style.left = Math.random() * 100 + "vw"; h.style.color = colors[i % colors.length];
-    h.style.animationDuration = 1.6 + Math.random() * 1.6 + "s"; h.style.animationDelay = Math.random() * .5 + "s";
-    h.style.setProperty("--spin", (Math.random() * 360 - 180) + "deg"); h.style.scale = .6 + Math.random() * .9;
-    document.body.append(h); setTimeout(() => h.remove(), 4000);
-  }
-}
-let booted = false;
-function boot() {
-  if (booted) return; booted = true;
-  $("gate").hidden = true; $("app").hidden = false;
-  drawBase();
-  rebuildSchedule();
-  fitCampus();
-  render();
-  startData();
-}
-(function gate() {
-  if (store.get("gate", false)) { boot(); return; } // answered before on this device
-  const box = $("answers");
-  for (const g of GATE) box.append(el("button", { type: "button", class: "btn", onclick: (e) => {
-    const b = e.currentTarget, card = document.querySelector(".gate-card");
-    if (g.ok) {
-      b.classList.add("right"); $("gate-msg").textContent = "נכון! 5,000,000 ועוד סופרים";
-      box.querySelectorAll("button").forEach((x) => (x.disabled = true));
-      store.set("gate", true); heartRain(); setTimeout(boot, 1600);
-    } else {
-      b.classList.add("wrong"); $("gate-msg").textContent = g.m;
-      card.classList.remove("shake"); void card.offsetWidth; card.classList.add("shake");
-    }
-  } }, g.a));
-})();
-
 /* ---------- boot ---------- */
-function startData() {
+drawBase();
+rebuildSchedule();
+fitCampus();
+render();
+
 loadCalendar();
 setInterval(loadCalendar, 30 * 60000); // pick up schedule changes while the page stays open
 setInterval(() => { const d = new Date(); if (!sameDay(d, selectedDay || d) && !focusOcc) selectedDay = null; rebuildSchedule(); render(); }, 30000);
 $("mapbox").append(popup);
 new ResizeObserver(() => view && setView(view)).observe($("mapbox"));
-}
 </script>
 
 </body>
