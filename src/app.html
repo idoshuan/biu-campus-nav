@@ -161,6 +161,15 @@ ol.timeline { list-style: none; margin: 0; padding: 0; display: grid; }
 .maptools { position: absolute; top: 12px; inset-inline-start: 12px; display: grid; gap: 8px; }
 .maptools button { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--edge); background: var(--card); cursor: pointer; font: 700 20px/1 var(--f-display); display: grid; place-items: center; box-shadow: 0 2px 0 var(--edge); }
 .maptools button:active { transform: translateY(2px); box-shadow: none; }
+.navbar { position: absolute; top: 12px; inset-inline-start: 64px; inset-inline-end: 12px; display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+  background: var(--card); border: 2px solid var(--edge); border-radius: 20px; box-shadow: 3px 4px 0 var(--edge); padding: 8px 10px; }
+.navbar .arrow { width: 52px; height: 52px; border-radius: 50%; background: var(--coral); color: var(--coral-ink); border: 2px solid var(--edge); display: grid; place-items: center; }
+.navbar .arrow svg { width: 30px; height: 30px; transition: transform .25s ease-out; }
+.navbar.done .arrow { background: var(--mint); }
+.navbar b { display: block; font: 700 19px/1.2 var(--f-display); }
+.navbar span { display: block; font-size: 13px; color: var(--muted); line-height: 1.3; }
+@media (max-width: 899px) { body.walking .mapcol { order: -1; } body.walking .mapbox { height: 68vh; } } /* phone: the map comes first while walking */
+.you .cone { fill: var(--route); opacity: .4; }
 .legend { position: absolute; bottom: 10px; inset-inline-end: 10px; background: var(--card); border: 2px solid var(--edge); border-radius: 999px; padding: 3px 12px; font-size: 12px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; max-width: calc(100% - 20px); }
 .legend i { display: inline-block; width: 18px; height: 0; border-top: 3px solid var(--route); vertical-align: middle; margin-inline-end: 4px; }
 .legend i.est { border-top: 2px dashed var(--muted); }
@@ -241,6 +250,11 @@ footer { font-size: 12px; color: var(--muted); }
         <button type="button" id="z-in" aria-label="הגדלה">+</button>
         <button type="button" id="z-out" aria-label="הקטנה">−</button>
         <button type="button" id="z-fit" aria-label="התאמה למסלול"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      </div>
+      <div class="navbar" id="navbar" hidden aria-live="polite">
+        <div class="arrow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 17-7-4-7 4 7-17Z" fill="currentColor" stroke="var(--edge)" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
+        <div><b id="nav-main"></b><span id="nav-sub"></span></div>
+        <button type="button" class="btn small" id="nav-stop">סיום</button>
       </div>
       <div class="legend"><span><i></i>מסלול</span><span><i class="est"></i>מיקום משוער</span><span><b class="gk"></b>שער</span><span><b class="sk"></b>הסעות</span></div>
     </div>
@@ -526,7 +540,7 @@ function fromGPS() {
   if (!gps) { if (gpsState === "off") setTimeout(askGPS, 0); return { noGps: true, label: "המיקום שלי" }; }
   const [x, y] = toXY(gps.lat, gps.lon), d = distToCampus(x, y);
   if (d > C.zone) return { far: true, km: d / 1000, label: "המיקום שלי" }; // too far for a walking route
-  return { node: nearestNode(x, y), label: d > 0 ? "המיקום שלי (מחוץ לקמפוס)" : "המיקום שלי", xy: [x, y] };
+  return { node: nearestNode(x, y), label: d > 0 ? "המיקום שלי (מחוץ לקמפוס)" : "המיקום שלי", xy: [x, y], gps: true };
 }
 function prevUsable(prevOcc, at) { return !!(prevOcc && prevOcc.b && BLD.has(prevOcc.b) && (at - prevOcc.end) / 60000 <= PREV_WINDOW_MIN); }
 const LOTS = C.pois.filter((p) => p.k === "parking");
@@ -548,7 +562,11 @@ function askGPS() {
   gpsState = "asking"; render();
   try {
     navigator.geolocation.watchPosition(
-      (p) => { gps = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy }; gpsState = "on"; render(); },
+      (p) => {
+        gps = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy }; gpsState = "on";
+        if (!compassOn && p.coords.speed > 0.7 && p.coords.heading != null && !isNaN(p.coords.heading)) heading = p.coords.heading; // no compass: direction of travel
+        render();
+      },
       () => { gpsState = "denied"; render(); },
       { enableHighAccuracy: true, maximumAge: 15000, timeout: 15000 });
   } catch { gpsState = "denied"; render(); }
@@ -635,7 +653,7 @@ function setView(v) {
   for (const g of document.querySelectorAll("#m-poi .poi")) g.style.display = px > 1.4 ? "none" : "";
   document.querySelectorAll("#m-poi > g").forEach((g) => { const t = g.getAttribute("transform").replace(/ scale\(.*\)/, ""); g.setAttribute("transform", t + ` scale(${px.toFixed(3)})`); });
   for (const t of document.querySelectorAll("#m-lbl .gl")) t.style.display = px > 2.2 ? "none" : "";
-  const you = $("m-top").querySelector(".you-dot"); if (you) you.setAttribute("r", 7 * px);
+  const you = $("m-top").querySelector(".you"); if (you) you.setAttribute("transform", `translate(${you.dataset.x},${you.dataset.y}) scale(${px.toFixed(3)})`);
   placePopup();
   for (const m of $("m-top").querySelectorAll(".pin")) m.setAttribute("r", 8 * px);
 }
@@ -657,7 +675,7 @@ function svgPoint(ev) { const r = svg.getBoundingClientRect(); return [view.x + 
   svg.addEventListener("pointermove", (e) => {
     if (!ptrs.has(e.pointerId)) return;
     const r = svg.getBoundingClientRect(), k = view.w / r.width, prevP = ptrs.get(e.pointerId);
-    if (ptrs.size === 1) { const dx = e.clientX - prevP[0], dy = e.clientY - prevP[1]; moved += Math.abs(dx) + Math.abs(dy); setView({ ...view, x: view.x - dx * k, y: view.y - dy * k }); }
+    if (ptrs.size === 1) { const dx = e.clientX - prevP[0], dy = e.clientY - prevP[1]; moved += Math.abs(dx) + Math.abs(dy); if (moved > 6) follow = false; setView({ ...view, x: view.x - dx * k, y: view.y - dy * k }); }
     ptrs.set(e.pointerId, [e.clientX, e.clientY]);
     if (ptrs.size === 2) {
       const [a, b] = [...ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]), mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
@@ -683,20 +701,22 @@ function svgPoint(ev) { const r = svg.getBoundingClientRect(); return [view.x + 
   svg.addEventListener("pointercancel", up);
   svg.addEventListener("wheel", (e) => { e.preventDefault(); const [x, y] = svgPoint(e); zoomAt(e.deltaY > 0 ? 1.15 : 1 / 1.15, x, y); }, { passive: false });
   $("z-in").onclick = () => zoomAt(1 / 1.4); $("z-out").onclick = () => zoomAt(1.4);
-  $("z-fit").onclick = () => (lastRoutePts ? fit(lastRoutePts) : fitCampus());
+  $("z-fit").onclick = () => { if (walking && navStart?.gps) { follow = true; followMe(navStart.xy); } else if (lastRoutePts) fit(lastRoutePts); else fitCampus(); };
 })();
 let lastRoutePts = null, lastRouteKey = "";
 function drawRoute(r, targetNum, start, endC) {
   const g = $("m-route"), top = $("m-top"); g.replaceChildren(); top.replaceChildren();
   document.querySelectorAll(".b-target").forEach((e) => e.classList.remove("b-target"));
   if (targetNum) document.querySelectorAll(`[data-b="${CSS.escape(targetNum)}"]`).forEach((e) => e.classList.add("b-target"));
-  if (start?.xy) top.append(ns("circle", { cx: start.xy[0], cy: start.xy[1], r: 7, fill: "var(--you)", stroke: "var(--card)", "stroke-width": 2, "vector-effect": "non-scaling-stroke", class: "you-dot" }));
+  if (start?.xy) top.append(youMarker(start));
+  navStart = start; navPts = null;
   if (!r) { // no route: just bring the destination into view (once, so panning isn't undone on refresh)
     lastRoutePts = null; const c = endC || BLD.get(targetNum)?.c, key = c ? "pt>" + c : "";
     if (c && key !== lastRouteKey) { lastRouteKey = key; fit([c], 150); } else setView(view);
     return;
   }
   const P = r.path.map((i) => NODES[i]); const t = BLD.get(targetNum);
+  if (start?.gps) P.unshift(start.xy); // the line starts at her, not at the nearest path
   if (endC) P.push(endC); else if (t) P.push(t.c);
   const d = "M" + P.map(([x, y]) => x.toFixed(1) + " " + y.toFixed(1)).join("L");
   g.append(ns("path", { d, class: "route-casing" }), ns("path", { d, class: "route" }));
@@ -704,7 +724,103 @@ function drawRoute(r, targetNum, start, endC) {
   top.append(ns("circle", { cx: P[P.length - 1][0], cy: P[P.length - 1][1], r: 8, fill: "var(--route)", stroke: "var(--card)", "stroke-width": 2, "vector-effect": "non-scaling-stroke", class: "pin" }));
   const key = r.path[0] + ">" + (targetNum || endC);
   lastRoutePts = start?.xy ? [...P, start.xy] : P;
-  if (key !== lastRouteKey) { lastRouteKey = key; fit(lastRoutePts); } else setView(view);
+  if (start?.gps) navPts = P;
+  if (walking && follow && start?.gps) { lastRouteKey = key; followMe(start.xy); }
+  else if (key !== lastRouteKey) { lastRouteKey = key; fit(lastRoutePts); } else setView(view);
+}
+
+/* ---------- walking mode: which way she faces, map follows her, next turn ---------- */
+let walking = false, follow = true, heading = null, compassOn = false, wakeLock = null, fromBeforeWalk = null;
+let navStart = null, navPts = null;
+function youMarker(start) {
+  const g = ns("g", { class: "you", "data-x": start.xy[0], "data-y": start.xy[1], transform: `translate(${start.xy[0]},${start.xy[1]})` });
+  if (start.gps) g.append(ns("path", { class: "cone", d: "M0 0L-12 -32A34 34 0 0 1 12 -32Z", style: heading == null ? "display:none" : "", transform: `rotate(${heading || 0})` }));
+  g.append(ns("circle", { r: 7, fill: "var(--you)", stroke: "var(--card)", "stroke-width": 2.5 }));
+  return g;
+}
+function followMe(xy) {
+  const w = view && view.w < 700 ? view.w : 260; // keep her zoom, but start close
+  setView({ x: xy[0] - w / 2, y: xy[1] - w / 2, w, h: w });
+}
+function startCompass() {
+  if (compassOn || !window.DeviceOrientationEvent) return;
+  let raf = 0;
+  const on = (e) => {
+    let h = e.webkitCompassHeading; // iPhone: degrees from north
+    if (h == null && e.absolute && e.alpha != null) h = 360 - e.alpha; // Android
+    if (h == null || isNaN(h)) return;
+    h = (h + (screen.orientation?.angle || 0) + 360) % 360;
+    if (heading == null) heading = h; else { const d = ((h - heading + 540) % 360) - 180; heading = (heading + d * 0.3 + 360) % 360; } // smooth the jitter
+    compassOn = true;
+    if (!raf) raf = requestAnimationFrame(() => { raf = 0; showHeading(); guide(); });
+  };
+  const listen = () => { addEventListener("deviceorientationabsolute", on); addEventListener("deviceorientation", on); };
+  if (typeof DeviceOrientationEvent.requestPermission === "function") // iPhone asks once, from a tap
+    DeviceOrientationEvent.requestPermission().then((s) => s === "granted" && listen()).catch(() => {});
+  else listen();
+}
+function showHeading() {
+  const c = $("m-top").querySelector(".you .cone"); if (!c) return;
+  c.style.display = heading == null ? "none" : ""; c.setAttribute("transform", `rotate(${(heading || 0).toFixed(1)})`);
+}
+async function keepAwake() { try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {} }
+document.addEventListener("visibilitychange", () => { if (walking && document.visibilityState === "visible") keepAwake(); });
+function startWalk() {
+  closePopup(); startCompass(); // the compass permission has to be asked inside the tap
+  walking = true; follow = true;
+  if (fromChoice !== "gps") { fromBeforeWalk = fromChoice; fromChoice = "gps"; }
+  if (gpsState === "off") askGPS();
+  keepAwake(); render();
+  $("mapbox").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function stopWalk() {
+  walking = false; lastRouteKey = "";
+  if (fromBeforeWalk) { fromChoice = fromBeforeWalk; fromBeforeWalk = null; }
+  wakeLock?.release?.(); wakeLock = null; render();
+}
+$("nav-stop").onclick = stopWalk;
+const metersText = (m) => (m < 1000 ? Math.max(5, Math.round(m / 5) * 5) + " מ'" : (m / 1000).toFixed(1) + " ק\"מ");
+function guide() {
+  const bar = $("navbar"); bar.hidden = !walking; document.body.classList.toggle("walking", walking); if (!walking) return;
+  const arrow = bar.querySelector(".arrow svg"), set = (main, sub, rot, done) => {
+    $("nav-main").textContent = main; $("nav-sub").textContent = sub; bar.classList.toggle("done", !!done);
+    arrow.style.transform = rot == null ? "" : `rotate(${rot.toFixed(0)}deg)`; arrow.style.opacity = rot == null ? .45 : 1;
+  };
+  const st = navStart;
+  if (!st?.gps || !navPts) {
+    if (st?.far) return set("את רחוקה מהקמפוס", `הניווט יתחיל כשתהיי עד ${C.zone} מ' ממנו`, null);
+    return set(gpsState === "denied" ? "אין גישה למיקום" : "מחפשים איפה את…", gpsState === "denied" ? "צריך לאשר מיקום לדף בהגדרות הטלפון" : "רגע אחד", null);
+  }
+  const P = navPts, me = st.xy, cum = [0];
+  for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+  // where she is along the route
+  let bi = 0, bt = 0, bd = Infinity;
+  for (let i = 0; i < P.length - 1; i++) {
+    const [x1, y1] = P[i], dx = P[i + 1][0] - x1, dy = P[i + 1][1] - y1, L = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((me[0] - x1) * dx + (me[1] - y1) * dy) / L)), d = Math.hypot(me[0] - x1 - t * dx, me[1] - y1 - t * dy);
+    if (d < bd) { bd = d; bi = i; bt = t; }
+  }
+  const along = cum[bi] + bt * (cum[bi + 1] - cum[bi]), left = cum[cum.length - 1] - along;
+  const end = P[P.length - 1];
+  if (left < 15 || Math.hypot(me[0] - end[0], me[1] - end[1]) < 20) return set("הגעת!", "בהצלחה, " + NAME, 0, true);
+  const at = (m) => { let i = 0; while (i < P.length - 2 && cum[i + 1] < m) i++; const t = (m - cum[i]) / ((cum[i + 1] - cum[i]) || 1); return [P[i][0] + t * (P[i + 1][0] - P[i][0]), P[i][1] + t * (P[i + 1][1] - P[i][1])]; };
+  const ahead = at(Math.min(along + 20, cum[cum.length - 1]));
+  const bearing = Math.atan2(ahead[0] - me[0], -(ahead[1] - me[1])) * 180 / Math.PI; // map is north-up
+  // the next real turn further along the path
+  const dirAt = (m0, m1) => { const a = at(m0), b = at(m1); return Math.atan2(b[0] - a[0], -(b[1] - a[1])) * 180 / Math.PI; };
+  let turn = null;
+  for (let i = 1; i < P.length - 1; i++) {
+    if (cum[i] < along + 8) continue;
+    const a = ((dirAt(cum[i], cum[i] + 12) - dirAt(cum[i] - 12, cum[i]) + 540) % 360) - 180;
+    if (Math.abs(a) >= 35) { turn = { d: cum[i] - along, a }; break; }
+  }
+  const nextTxt = turn ? `בעוד ${metersText(turn.d)} ${Math.abs(turn.a) > 150 ? "פרסה" : turn.a > 0 ? "ימינה" : "שמאלה"}` : "ישר עד היעד";
+  const rest = `נשארו ${metersText(left)} · ${Math.max(1, Math.ceil(left / WALK_MPS / 60))} דק'`;
+  const off = bd > 25 ? "חזרי לקו הכתום · " : "", weak = gps?.acc > 40 ? ` · דיוק ±${Math.round(gps.acc)} מ'` : "";
+  if (heading == null) return set(nextTxt, off + rest + " · החץ לפי המפה (צפון למעלה)" + weak, bearing);
+  const rel = ((bearing - heading + 540) % 360) - 180;
+  const main = Math.abs(rel) < 25 ? nextTxt : Math.abs(rel) > 150 ? "את הולכת הפוך, הסתובבי" : rel > 0 ? "פני ימינה" : "פני שמאלה";
+  set(main, off + (main === nextTxt ? "" : nextTxt + " · ") + rest + weak, rel);
 }
 
 /* ---------- rendering ---------- */
@@ -722,7 +838,7 @@ function fromPicker(prevOcc, at, toNode) {
   const prevOk = prevUsable(prevOcc, at), active = fromChoice === "park" ? "park" : fromChoice === "prev" && prevOk ? "prev" : "gps";
   const gpsSub = gpsState === "asking" ? "מאתר…" : gpsState === "denied" ? "לא זמין בדף הזה" : gpsState === "on" ? (fromGPS().far ? "רחוק מהקמפוס" : "פעיל") : "";
   const opt = (v, title, sub, disabled) => el("button", { type: "button", role: "radio", "aria-checked": String(active === v), disabled: disabled ? "" : null,
-    onclick: () => { fromChoice = v; store.set("from", v); if (v === "gps" && gpsState === "off") askGPS(); render(); } }, el("b", {}, title), el("span", {}, sub || "\u00a0"));
+    onclick: () => { fromChoice = v; store.set("from", v); fromBeforeWalk = null; if (v === "gps" && gpsState === "off") askGPS(); if (walking && v !== "gps") stopWalk(); else render(); } }, el("b", {}, title), el("span", {}, sub || "\u00a0"));
   return el("div", { class: "from" }, el("span", { class: "eyebrow" }, "יציאה מ"),
     el("div", { class: "seg", role: "radiogroup", "aria-label": "יציאה מ" },
       opt("prev", "השיעור הקודם", prevOk ? `בניין ${prevOcc.b} · עד ${hm(prevOcc.end)}` : "אין שיעור קודם היום", !prevOk),
@@ -774,7 +890,11 @@ function statsRow(occ, r) {
   stats.append(el("div", { class: "stat" }, el("b", {}, r ? Math.round(r.meters / 10) * 10 + " מ'" : "–"), el("span", {}, "מרחק")));
   return stats;
 }
-function showRouteBtn(c) { return el("button", { class: "btn primary", type: "button", onclick: () => { fit(lastRoutePts || [c]); $("mapbox").scrollIntoView({ behavior: "smooth", block: "center" }); } }, "קחי אותי לשם"); }
+function showRouteBtn(c) {
+  if (walking) return el("button", { class: "btn primary", type: "button", onclick: stopWalk }, "סיום ניווט");
+  return el("div", { class: "row" }, el("button", { class: "btn primary", type: "button", onclick: startWalk }, "צאי לדרך"),
+    el("button", { class: "btn", type: "button", onclick: () => { follow = false; fit(lastRoutePts || [c]); $("mapbox").scrollIntoView({ behavior: "smooth", block: "center" }); } }, "המסלול במפה"));
+}
 function buildingPicker(title) {
   const s = el("select", { "aria-label": "בניין עבור " + title });
   s.append(el("option", { value: "" }, "בחירת בניין"));
@@ -921,6 +1041,7 @@ function render() {
   const now = new Date();
   renderHello(now);
   renderNext(now); renderDays(now); renderTimeline(now);
+  guide();
 }
 
 /* ---------- search ---------- */
