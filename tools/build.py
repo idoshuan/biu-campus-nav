@@ -227,11 +227,6 @@ PDF_POI = [
  ("atm", None, [(702,626),(1294,707)]),
  ("worship", "בית כנסת", [(1106,151)]), ("worship", "חדר תפילה למוסלמים", [(1316,151),(460,608)]), ("worship", "חדר תפילה לנוצרים", [(1331,151)]),
  ("service", "מרכז שירות וגיוס *9392", [(581,630)]),
- ("parking", "חניון בתשלום", [(413,234),(1170,231),(1002,455),(1344,414)]),
- ("parking", "חניון נכים", [(766,743)]),
- ("parking", "חניון למורשים בלבד", [(1169,817)]),
- ("parking", "חניון", [(678,250),(442,317),(833,209),(910,200),(970,173),(442,364),(442,423),(528,537),(778,520),(976,602),(1156,730),
-   (1349,717),(1566,783),(1478,873),(465,854),(532,947),(979,1113),(1242,1010),(1105,1097),(1398,976)]),
 ]
 SHUTTLE_PX = {"0":(929,149),"1":(788,181),"2":(419,328),"3":(473,504),"4":(373,632),"5":(427,757),"6":(501,897),"8":(1362,1009),
  "9":(1597,918),"10":(1425,739),"11":(846,673),"12":(500,753),"13":(421,666),"14":(498,484),"15":(475,352),"16":(1074,264)}
@@ -251,7 +246,7 @@ for wid, name, info, guess in OFFICIAL_LOTS:
     lots.append(dict(k="parking", name=name, info=info, official=True, approx=guess, c=[round(c[0], 1), round(c[1], 1)],
                      p=[[round(x, 1), round(y, 1)] for x, y in poly], g=nearest(c)))
 def near_lot(c): return any(math.dist(L["c"], c) < 90 or inside(c, L["p"]) for L in lots)
-pois = [q for q in pois if not (q["k"] == "parking" and near_lot(q["c"]))] + lots
+pois = [q for q in pois if q["k"] != "parking"] + lots  # only the official lots; other spots were unreliable estimates
 for k, name, pxs in PDF_POI:
     for uv in pxs:
         c = [round(v, 1) for v in local(uv)]
