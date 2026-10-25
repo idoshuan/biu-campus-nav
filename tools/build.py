@@ -194,16 +194,31 @@ for e in d:
 
 # gates: name OSM gates after the nearest numbered gate on the illustration; add the ones OSM lacks
 GATE_PX = {"1":(1413,698),"2":(1351,667),"5":(761,443),"10":(1101,247),"15":(1226,113),"20":(693,163),"25":(445,511),"30":(540,994),"40":(1621,912)}
+# names and pedestrian opening hours from biu.ac.il/useful-information/orientation/transport-and-parking
+# w = Sun-Thu, f = Friday/holiday eve, s = Saturday; "24" always open, None closed
+GATE_INFO = {
+ "1": ("פיצ'וטו", {"w": "24", "f": "00:00-15:30", "s": None}),  # closes about an hour before Shabbat
+ "2": ("", {"w": "24", "f": "24", "s": "24"}),
+ "5": ("דקלים", {"w": "06:30-18:00", "f": "06:30-13:00", "s": None}),
+ "10": ("דהאן", {"w": "06:30-18:00", "f": "06:30-14:00", "s": None}),
+ "15": ("מעונות", {"w": "24", "f": "24", "s": "24"}),
+ "20": ("מוסיקה", {"w": "06:30-20:00", "f": None, "s": None}),
+ "25": ("הרצוג", {"w": "06:30-18:00", "f": "06:30-13:00", "s": None}),
+ "30": ("גהה", {"w": "06:30-21:00", "f": "06:30-13:00", "s": None}),
+ "40": ("אונו", {"w": None, "f": None, "s": None}),
+}
 osm_gates = [p for p in pois if p["k"] == "gate"]
 pois = [p for p in pois if p["k"] != "gate"]
-for g, uv in GATE_PX.items():
-    est = local(uv)
-    near = [q for q in osm_gates if math.dist(q["c"], est) < 70]
-    if near:
-        q = min(near, key=lambda q: math.dist(q["c"], est)); c = q["c"]; approx = False
-    else:
-        c = [round(est[0], 1), round(est[1], 1)]; approx = True
-    pois.append(dict(k="gate", name="שער " + g, c=c, g=nearest(c), approx=approx))
+est = {g: local(uv) for g, uv in GATE_PX.items()}
+pairs = sorted(((math.dist(q["c"], e), g, i) for g, e in est.items() for i, q in enumerate(osm_gates) if math.dist(q["c"], e) < 70))
+taken, match = set(), {}
+for dist_, g, i in pairs:  # each OSM gate matches at most one numbered gate, closest pairs first
+    if g not in match and i not in taken: match[g] = i; taken.add(i)
+for g in GATE_PX:
+    if g in match: c = osm_gates[match[g]]["c"]; approx = False
+    else: c = [round(est[g][0], 1), round(est[g][1], 1)]; approx = True
+    nick, hours = GATE_INFO[g]
+    pois.append(dict(k="gate", name="שער " + g, nick=nick, hours=hours, c=c, g=nearest(c), approx=approx))
     print("  gate %s: %s" % (g, "estimated" if approx else "matched OSM gate"), file=sys.stderr)
 
 # places marked on the official campus map (px in the same frame as PX); positions estimated with local()
@@ -222,15 +237,33 @@ SHUTTLE_PX = {"0":(929,149),"1":(788,181),"2":(419,328),"3":(473,504),"4":(373,6
  "9":(1597,918),"10":(1425,739),"11":(846,673),"12":(500,753),"13":(421,666),"14":(498,484),"15":(475,352),"16":(1074,264)}
 def nearest_bnum(c): return min(out, key=lambda b: math.dist(b["c"], c))["n"]
 added = collections.Counter()
+# the university's four paid lots (same page), matched to OSM outlines by gate and street; prices from that page
+PRICE = "30 ₪ ליום · 15 ₪ עם דמי רווחה"
+OFFICIAL_LOTS = [
+ (59374860, "חניון מרכז וואהל", "מול שער 5 · " + PRICE + " · כניסה חופשית אחרי 20:00 ובסופ\"ש (לפי OSM)", False),
+ (940525950, "חניון ספורט", "ליד שער 10 · " + PRICE, False),
+ (955804722, "חניון מוסיקה", "רח' ז'בוטינסקי, מאחורי בניין 1005 · " + PRICE, False),
+ (135308564, "חניון יהודית", "רח' מקס ואנה ווב · " + PRICE + " · זיהוי החניון משוער", True),
+]
+lots = []
+for wid, name, info, guess in OFFICIAL_LOTS:
+    poly = [xy(N[n]) for n in W[wid]["nodes"][:-1] if n in N]; c = centroid(poly)
+    lots.append(dict(k="parking", name=name, info=info, official=True, approx=guess, c=[round(c[0], 1), round(c[1], 1)],
+                     p=[[round(x, 1), round(y, 1)] for x, y in poly], g=nearest(c)))
+def near_lot(c): return any(math.dist(L["c"], c) < 90 or inside(c, L["p"]) for L in lots)
+pois = [q for q in pois if not (q["k"] == "parking" and near_lot(q["c"]))] + lots
 for k, name, pxs in PDF_POI:
     for uv in pxs:
         c = [round(v, 1) for v in local(uv)]
         same = ("cafe", "food") if k == "food" else (k,)
         if any(q["k"] in same and math.dist(q["c"], c) < (50 if k == "parking" else 40) for q in pois): continue
+        if k == "parking" and near_lot(c): continue
         pois.append(dict(k=k, name=name, c=c, g=nearest(c), approx=True)); added[k] += 1
 for num, uv in SHUTTLE_PX.items():
     c = [round(v, 1) for v in local(uv)]
-    pois.append(dict(k="shuttle", name="תחנת הסעות " + num, c=c, g=nearest(c), approx=True)); added["shuttle"] += 1
+    info = "הורדה בלבד" if num == "16" else "מתחם הנדסה · השאטל האחרון יוצא מכאן" if num == "0" else ""
+    info = " · ".join(x for x in (info, "כל 5–7 דק' · א'–ה' 07:30–20:00 · ו' 07:30–12:00") if x)
+    pois.append(dict(k="shuttle", name="תחנת הסעות " + num, info=info, c=c, g=nearest(c), approx=True)); added["shuttle"] += 1
 for q in pois:  # give unnamed places a name people can find: type + nearest building
     if not q.get("name"):
         q["name"] = {"cafe": "בית קפה", "food": "מזנון", "atm": "כספומט", "parking": "חניון", "toilets": "שירותים", "water": "ברזיית מים"}.get(q["k"], q["k"])

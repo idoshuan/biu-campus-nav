@@ -73,10 +73,6 @@ header.top { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; ali
 .btn svg { width: 18px; height: 18px; }
 .linkbtn { background: none; border: 0; padding: 4px 0; color: var(--grape); font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 
-/* sample banner */
-.banner { background: var(--lemon); color: #3b2316; border: 2px solid var(--edge); border-radius: var(--r); box-shadow: var(--stick-sm); padding: 12px 14px;
-  display: flex; gap: 10px; justify-content: space-between; align-items: center; flex-wrap: wrap; transform: rotate(-.6deg); }
-.banner .note { color: #4a3a5e; }
 
 /* next class card */
 .next { background: var(--card); border: 2px solid var(--edge); border-radius: var(--r); box-shadow: var(--stick); padding: 18px; display: grid; gap: 14px;
@@ -110,7 +106,7 @@ header.top { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; ali
 /* start picker: two-option toggle */
 .from { display: grid; gap: 8px; width: 100%; }
 .from > .eyebrow { background: var(--soft); color: var(--ink); transform: none; }
-.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; border: 2px solid var(--edge); border-radius: 18px; background: var(--soft); }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 5px; border: 2px solid var(--edge); border-radius: 18px; background: var(--soft); }
 .seg button { border: 0; border-radius: 13px; background: transparent; padding: 8px 12px; cursor: pointer; display: grid; gap: 1px; text-align: start; min-width: 0; transition: background .15s; }
 .seg button b { font: 600 15px/1.2 var(--f-display); }
 .seg button span { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
@@ -155,6 +151,7 @@ ol.timeline { list-style: none; margin: 0; padding: 0; display: grid; }
 .res span { color: var(--muted); font-size: 12px; display: block; }
 .pchip { background: var(--grape) !important; color: #ffffff !important; display: grid; place-items: center; }
 .pchip svg { width: 20px; height: 20px; }
+.pchip.gatechip { background: var(--card) !important; color: var(--ink) !important; }
 .pchip.shuttle { background: #8c2335 !important; }
 
 /* map */
@@ -174,6 +171,7 @@ ol.timeline { list-style: none; margin: 0; padding: 0; display: grid; }
 .w-road { stroke: var(--road); stroke-width: 6; }
 .w-steps { stroke: var(--walk); stroke-width: 3.5; stroke-dasharray: 2 2; }
 .b-shape { stroke: var(--bldg-edge); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.lot { fill: color-mix(in srgb, var(--coral) 14%, transparent); stroke: var(--coral); stroke-width: 1.5; stroke-dasharray: 5 3; vector-effect: non-scaling-stroke; }
 .b-other { fill: var(--bldg); stroke: var(--bldg-edge); stroke-opacity: .45; stroke-width: 1; vector-effect: non-scaling-stroke; }
 .b-est { fill: color-mix(in srgb, var(--card) 60%, transparent); stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
 .b-target { stroke: var(--route) !important; stroke-width: 3.5 !important; }
@@ -215,17 +213,6 @@ ol.timeline { list-style: none; margin: 0; padding: 0; display: grid; }
 .heart-fx { position: fixed; z-index: 50; top: -40px; width: 26px; height: 24px; pointer-events: none; animation: fall linear forwards; }
 @keyframes fall { to { transform: translateY(110vh) rotate(var(--spin)); } }
 
-/* calendar dialog */
-dialog { border: 2px solid var(--edge); border-radius: 26px; background: var(--card); color: var(--ink); padding: 0; width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 48px); box-shadow: var(--stick); }
-dialog::backdrop { background: rgb(40 22 12 / .55); }
-.dlg { padding: 20px; display: grid; gap: 16px; }
-.dlg h3 { font: 700 22px/1.2 var(--f-display); margin: 0; }
-.field { display: grid; gap: 6px; }
-.field > span { font: 600 15px var(--f-display); }
-.dlg input[type=url] { width: 100%; border: 2px solid var(--edge); background: var(--soft); border-radius: 14px; padding: 10px 12px; }
-.msg { font-size: 14px; border-radius: 14px; padding: 10px 12px; border: 2px solid var(--edge); }
-.msg.ok { background: var(--ok-bg); color: var(--ok); }
-.msg.err { background: var(--late-bg); color: var(--late); }
 footer { font-size: 12px; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .route { stroke-dasharray: none; } }
 </style>
@@ -253,13 +240,7 @@ footer { font-size: 12px; color: var(--muted); }
         <circle cx="23" cy="35" r="2.4" fill="#ffdcdc"/><circle cx="41" cy="35" r="2.4" fill="#ffdcdc"/>
       </svg>
       <div class="hello"><h1 id="hello">היי!</h1><p id="hello-sub"></p></div>
-      <button class="btn small" id="open-sched" type="button">חיבור יומן</button>
     </header>
-
-    <div class="banner" id="sample-banner" hidden>
-      <div><b>זו מערכת לדוגמה.</b> <span class="note">מחברים את היומן שלך ורואים את השיעורים האמיתיים.</span></div>
-      <button class="btn small" type="button" id="sample-connect">חיבור היומן</button>
-    </div>
 
     <article class="next" id="next" aria-live="polite"></article>
 
@@ -292,19 +273,6 @@ footer { font-size: 12px; color: var(--muted); }
     </div>
   </div>
 </div>
-
-<dialog id="dlg">
-  <form method="dialog" class="dlg">
-    <div class="row" style="justify-content:space-between"><h3>חיבור היומן שלך</h3><button class="btn" value="close">סגירה</button></div>
-    <label class="field" for="ics-url">
-      <span>קישור ליומן (iCal)</span>
-      <input type="url" id="ics-url" placeholder="https://calendar.google.com/calendar/ical/…/basic.ics" dir="ltr" autocomplete="off">
-      <small class="note">ב־Google Calendar: הגדרות ← בוחרים את היומן ← "הכתובת הסודית בפורמט iCal".</small>
-    </label>
-    <div class="row"><button class="btn primary" type="button" id="ics-load">חיבור</button><button class="btn" type="button" id="ics-remove" hidden>ניתוק</button></div>
-    <div id="ics-msg" class="msg" hidden></div>
-  </form>
-</dialog>
 
 <script type="application/json" id="campus">/*CAMPUS_DATA*/</script>
 <script>
@@ -474,36 +442,11 @@ function findBuilding(text) {
 /* ---------- schedule state ---------- */
 let icsText = store.get("ics", "");
 let overrides = store.get("overrides", {}); // course title -> building number
-const SAMPLE = [
-  { day: 0, start: "10:00", end: "12:00", title: "מבוא למדעי המחשב", b: "503", room: "11" },
-  { day: 0, start: "12:15", end: "13:45", title: "אלגברה לינארית", b: "216", room: "201" },
-  { day: 0, start: "14:00", end: "16:00", title: "סדנת כתיבה אקדמית", b: "1004", room: "3" },
-  { day: 1, start: "09:00", end: "11:00", title: "מבוא לסטטיסטיקה", b: "504", room: "12" },
-  { day: 1, start: "11:15", end: "12:45", title: "פסיכולוגיה כללית", b: "902", room: "1" },
-  { day: 2, start: "12:00", end: "14:00", title: "תולדות עם ישראל", b: "410", room: "8" },
-  { day: 3, start: "10:00", end: "11:30", title: "מבוא לכלכלה", b: "504", room: "1" },
-  { day: 3, start: "11:45", end: "13:15", title: "חשבון אינפיניטסימלי", b: "216", room: "104" },
-  { day: 3, start: "16:00", end: "18:00", title: "תרגול מבוא למדמ\"ח", b: "604", room: "2" },
-  { day: 4, start: "08:30", end: "10:00", title: "אנגלית מתקדמים", b: "1004", room: "12" },
-  { day: 4, start: "13:00", end: "15:00", title: "סמינר מחקר", b: "605", room: "4" },
-];
-const isSample = () => !icsText;
-function weeklyToOcc(list, from, to, src) {
-  const out = [];
-  for (let d = new Date(from.getFullYear(), from.getMonth(), from.getDate()); d <= to; d.setDate(d.getDate() + 1)) {
-    for (const c of list) if (c.day === d.getDay()) {
-      const [sh, sm] = c.start.split(":").map(Number), [eh, em] = c.end.split(":").map(Number);
-      out.push({ title: c.title, b: c.b, room: c.room || "", start: new Date(d.getFullYear(), d.getMonth(), d.getDate(), sh, sm), end: new Date(d.getFullYear(), d.getMonth(), d.getDate(), eh, em), src, id: c.id });
-    }
-  }
-  return out;
-}
 let OCC = [];
 function rebuildSchedule() {
   const now = new Date(), from = new Date(now.getTime() - 86400000 * 1), to = new Date(now.getTime() + 86400000 * 21);
   let occ = [];
-  if (isSample()) occ = weeklyToOcc(SAMPLE, from, to, "sample");
-  else {
+  {
     if (icsText) {
       try {
         for (const e of expandICS(icsText, from, to)) {
@@ -518,7 +461,6 @@ function rebuildSchedule() {
   }
   for (const o of occ) if (overrides[o.title]) o.b = overrides[o.title];
   OCC = occ.sort((a, b) => a.start - b.start);
-  $("sample-banner").hidden = !isSample();
 }
 
 /* ---------- helpers ---------- */
@@ -563,16 +505,39 @@ const MAP_KINDS = new Set(["cafe", "food", "atm", "parking", "shuttle", "worship
 const nearB = (c) => C.buildings.reduce((a, b) => (Math.hypot(b.c[0] - c[0], b.c[1] - c[1]) < Math.hypot(a.c[0] - c[0], a.c[1] - c[1]) ? b : a)).n;
 C.pois.forEach((p, i) => { p.i = i; if (!p.near && !["gate", "shuttle", "bus"].includes(p.k)) p.near = nearB(p.c); });
 const GENERIC = new Set(["חניון", "מזנון", "בית קפה", "כספומט", "שירותים", "ברזיית מים"]);
-function placeTitle(p) { return GENERIC.has(p.name) && p.near ? p.name + " ליד " + p.near : p.name; }
+function placeTitle(p) {
+  if (p.k === "gate") return p.nick ? p.name + " · " + p.nick : p.name;
+  if (p.official) return p.name;
+  return (GENERIC.has(p.name) || p.k === "parking") && p.near ? p.name + " ליד " + p.near : p.name;
+}
+// gate opening hours (pedestrians), from the university's transport & parking page
+const HKEY = (d) => (d.getDay() === 6 ? "s" : d.getDay() === 5 ? "f" : "w");
+const mins = (t) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+function gateState(g, d) {
+  const h = g.hours && g.hours[HKEY(d)];
+  if (!g.hours) return null;
+  if (h === "24") return { open: true, text: "פתוח 24 שעות" };
+  if (!h) return { open: false, text: HKEY(d) === "w" ? "סגור" : "סגור היום" };
+  const [o, c] = h.split("-"), t = d.getHours() * 60 + d.getMinutes();
+  if (t < mins(o)) return { open: false, text: "סגור · נפתח ב־" + o };
+  if (t >= mins(c)) return { open: false, text: "סגור · נסגר ב־" + c };
+  return { open: true, text: "פתוח עד " + c };
+}
+function gateHoursText(g) {
+  const f = (h) => (h === "24" ? "24 שעות" : h ? h.replace("-", "–") : "סגור");
+  return `א'–ה' ${f(g.hours.w)} · ו' ${f(g.hours.f)} · שבת ${f(g.hours.s)}`;
+}
 function placeChip(p) {
   const s = document.createElement("span"); s.className = "bchip pchip";
-  if (p.k === "parking") s.textContent = "P"; else if (p.k === "shuttle") { s.textContent = p.name.replace(/\D+/g, ""); s.classList.add("shuttle"); } else s.innerHTML = icon(p.k);
+  if (p.k === "parking") s.textContent = "P";
+  else if (p.k === "gate") { s.textContent = p.name.replace(/\D+/g, ""); s.classList.add("gatechip"); } else if (p.k === "shuttle") { s.textContent = p.name.replace(/\D+/g, ""); s.classList.add("shuttle"); } else s.innerHTML = icon(p.k);
   return s;
 }
 
 /* ---------- start point ---------- */
 let gps = null, gpsState = "off"; // off | asking | on | denied
-let fromChoice = store.get("from", "prev") === "gps" ? "gps" : "prev";
+let fromChoice = ["gps", "park"].includes(store.get("from", "prev")) ? store.get("from", "prev") : "prev";
+let parkSel = store.get("park", ""); // a chosen lot, or "" for the closest one to where she's going
 const PREV_WINDOW_MIN = 120; // a class that ended up to this long before counts as "where I am now"
 function distToCampus(x, y) { // metres from the campus fence, 0 inside
   const poly = C.campus; let inside = false, best = Infinity;
@@ -591,7 +556,15 @@ function fromGPS() {
   return { node: nearestNode(x, y), label: d > 0 ? "המיקום שלי (מחוץ לקמפוס)" : "המיקום שלי", xy: [x, y] };
 }
 function prevUsable(prevOcc, at) { return !!(prevOcc && prevOcc.b && BLD.has(prevOcc.b) && (at - prevOcc.end) / 60000 <= PREV_WINDOW_MIN); }
-function startPoint(target, prevOcc, at) {
+const LOTS = C.pois.filter((p) => p.k === "parking");
+function lotsByWalk(toNode) { // parking lots with walking minutes to the destination, closest first
+  const sp = toNode != null ? shortest(toNode) : null;
+  return LOTS.map((p) => ({ p, min: sp && isFinite(sp.cost[p.g]) ? Math.max(1, Math.ceil(sp.cost[p.g] / WALK_MPS / 60)) : null }))
+    .sort((a, b) => (a.min ?? 1e9) - (b.min ?? 1e9));
+}
+function chosenLot(toNode) { return LOTS.find((p) => String(p.i) === String(parkSel)) || lotsByWalk(toNode)[0].p; }
+function startPoint(target, prevOcc, at, toNode) {
+  if (fromChoice === "park") { const p = chosenLot(toNode); return { node: p.g, label: placeTitle(p), xy: p.c, lot: p }; }
   if (fromChoice === "prev" && prevUsable(prevOcc, at))
     return { node: BLD.get(prevOcc.b).g, label: prevOcc.b === target ? "השיעור הקודם (אותו בניין)" : "השיעור הקודם, " + prevOcc.b };
   return fromGPS();
@@ -617,7 +590,9 @@ function buildingItem(b) {
   return { c: b.c, chip: chip(b.n), title: b.he, sub: [b.en, b.approx ? "מיקום משוער" : null].filter(Boolean).join(" · "), go: () => showBuilding(b.n) };
 }
 function placeItem(p) {
-  return { c: p.c, chip: placeChip(p), title: placeTitle(p), sub: [KIND_LABEL[p.k], p.near ? "ליד בניין " + p.near : null, p.approx ? "מיקום משוער" : null].filter(Boolean).join(" · "), go: () => showPlace(p) };
+  const gs = p.k === "gate" ? gateState(p, new Date()) : null;
+  const sub = p.k === "gate" ? [gs?.text, gateHoursText(p)] : [KIND_LABEL[p.k], p.near && !p.official ? "ליד בניין " + p.near : null, p.info, p.approx && !p.official ? "מיקום משוער" : null];
+  return { c: p.c, chip: placeChip(p), title: placeTitle(p), sub: sub.filter(Boolean).join(" · "), go: () => showPlace(p) };
 }
 function openPopup(it) {
   popupAt = it.c;
@@ -647,6 +622,7 @@ function drawBase() {
   const walk = $("m-walk"), by = { road: [], foot: [], steps: [] };
   for (const [k, ids] of C.draw) if (ids.length > 1) by[k].push("M" + ids.map((i) => NODES[i][0].toFixed(1) + " " + NODES[i][1].toFixed(1)).join("L"));
   for (const k of ["road", "foot", "steps"]) walk.append(ns("path", { d: by[k].join(""), class: "w-" + k }));
+  for (const p of C.pois) if (p.official) $("m-base").append(ns("polygon", { points: pts(p.p), class: "lot" }));
   const bg = $("m-bldg");
   for (const o of C.others) bg.append(ns("polygon", { points: pts(o.p), class: "b-other" }));
   for (const b of C.buildings) {
@@ -721,7 +697,7 @@ function svgPoint(ev) { const r = svg.getBoundingClientRect(); return [view.x + 
     if (moved < 6 && ptrs.size === 1) { // tap on a building selects it
       const [x, y] = svgPoint(e), px = view.w / svg.getBoundingClientRect().width;
       if (px <= 1.4) {
-        const hit = C.pois.filter((p) => MAP_KINDS.has(p.k)).find((p) => Math.hypot(p.c[0] - x, p.c[1] - y) < 12 * px);
+        const hit = C.pois.filter((p) => MAP_KINDS.has(p.k) || p.k === "gate").find((p) => Math.hypot(p.c[0] - x, p.c[1] - y) < 12 * px);
         if (hit) { openPopup(placeItem(hit)); up(e); return; }
       }
       // a tap inside a building's outline wins; otherwise the nearest label within reach (dashed, estimated buildings)
@@ -769,15 +745,25 @@ function currentAndNext(now) {
   return { cur, next };
 }
 function prevOf(o) { const i = OCC.indexOf(o); for (let j = i - 1; j >= 0; j--) if (sameDay(OCC[j].start, o.start) && OCC[j].end <= o.start) return OCC[j]; return null; }
-function fromPicker(prevOcc, at) {
-  const prevOk = prevUsable(prevOcc, at), active = fromChoice === "prev" && prevOk ? "prev" : "gps";
+function fromPicker(prevOcc, at, toNode) {
+  const prevOk = prevUsable(prevOcc, at), active = fromChoice === "park" ? "park" : fromChoice === "prev" && prevOk ? "prev" : "gps";
   const gpsSub = gpsState === "asking" ? "מאתר…" : gpsState === "denied" ? "לא זמין בדף הזה" : gpsState === "on" ? (fromGPS().far ? "רחוק מהקמפוס" : "פעיל") : "";
   const opt = (v, title, sub, disabled) => el("button", { type: "button", role: "radio", "aria-checked": String(active === v), disabled: disabled ? "" : null,
     onclick: () => { fromChoice = v; store.set("from", v); if (v === "gps" && gpsState === "off") askGPS(); render(); } }, el("b", {}, title), el("span", {}, sub || "\u00a0"));
   return el("div", { class: "from" }, el("span", { class: "eyebrow" }, "יציאה מ"),
     el("div", { class: "seg", role: "radiogroup", "aria-label": "יציאה מ" },
       opt("prev", "השיעור הקודם", prevOk ? `בניין ${prevOcc.b} · עד ${hm(prevOcc.end)}` : "אין שיעור קודם היום", !prevOk),
-      opt("gps", "המיקום שלי", gpsSub)));
+      opt("gps", "המיקום שלי", gpsSub),
+      opt("park", "חניון", active === "park" ? "" : "הכי קרוב לשיעור")),
+    active === "park" ? lotPicker(toNode) : null);
+}
+function lotPicker(toNode) {
+  const s = el("select", { "aria-label": "בחירת חניון" });
+  const best = lotsByWalk(toNode);
+  s.append(el("option", { value: "", selected: parkSel === "" ? "" : null }, `הכי קרוב: ${placeTitle(best[0].p)}` + (best[0].min ? ` · ${best[0].min} דק'` : "")));
+  for (const { p, min } of best) s.append(el("option", { value: String(p.i), selected: String(p.i) === String(parkSel) ? "" : null }, placeTitle(p) + (min ? ` · ${min} דק' הליכה` : "") + (p.approx ? " · משוער" : "")));
+  s.onchange = () => { parkSel = s.value; store.set("park", parkSel); render(); };
+  return s;
 }
 const STATUS_ICON = {
   ok: '<path d="M8 1.5l1.6 4.2L14 7.3l-4.4 1.6L8 13.2 6.4 8.9 2 7.3l4.4-1.6L8 1.5Z" fill="currentColor"/>',
@@ -796,11 +782,16 @@ function locationStatus(start, occ, now) {
   const sub = occ && occ.start > now ? "השיעור מתחיל בעוד " + minsText((occ.start - now) / 60000) : "";
   return statusEl("warn", head, sub, "pin");
 }
-function startNotes(start, extra) {
+function gateNote(start, at) {
+  if (!start.xy || distToCampus(start.xy[0], start.xy[1]) === 0) return "";
+  const near = GATES.filter((g) => g.hours).sort((a, b) => Math.hypot(a.c[0] - start.xy[0], a.c[1] - start.xy[1]) - Math.hypot(b.c[0] - start.xy[0], b.c[1] - start.xy[1])).slice(0, 2);
+  return " השערים הקרובים " + (sameDay(at, new Date()) && at - new Date() < 3600000 ? "עכשיו" : "ב־" + hm(at)) + ": " + near.map((g) => placeTitle(g) + " (" + gateState(g, at).text + ")").join(", ") + ".";
+}
+function startNotes(start, extra, at) {
   let t = "";
   if (start.far) t = `המסלול יופיע כשתהיי עד ${C.zone} מ' מהקמפוס, למשל בתחנת האוטובוס.`;
   else if (start.noGps) t = gpsState === "asking" ? "" : "המסלול יופיע כשהמיקום יהיה זמין. אפשר גם לבחור \"השיעור הקודם\".";
-  else t = "מסלול מ" + start.label + ". כולל מדרגות." + (extra || "");
+  else t = "מסלול מ" + start.label + ". כולל מדרגות." + (extra || "") + gateNote(start, at || new Date());
   return el("div", { class: "note" }, t);
 }
 function statsRow(occ, r) {
@@ -819,17 +810,18 @@ function buildingPicker(title) {
   return s;
 }
 function renderPlace(now, box) {
-  const p = focusPlace, prevOcc = lastClassBefore(now), start = startPoint(null, prevOcc, now);
+  const p = focusPlace, prevOcc = lastClassBefore(now), start = startPoint(null, prevOcc, now, p.g);
   const r = start.node != null ? route(start.node, p.g) : null;
   box.append(el("div", { class: "eyebrow" }, "ניווט אל"), el("h2", {}, placeTitle(p)));
   box.append(el("div", { class: "where" }, placeChip(p), el("div", {},
     el("div", { class: "bname" }, KIND_LABEL[p.k] + (p.near ? " · ליד בניין " + p.near : "")),
-    el("div", { class: "sub" }, p.approx ? "מיקום משוער לפי מפת הקמפוס" : "מתוך OpenStreetMap"))));
+    el("div", { class: "sub" }, p.k === "gate" ? gateHoursText(p) : p.info || (p.approx ? "מיקום משוער לפי מפת הקמפוס" : "מתוך OpenStreetMap")))));
+  if (p.k === "gate") { const gs = gateState(p, now); box.append(statusEl(gs.open ? "ok" : "warn", gs.text, "שעות לפי אתר האוניברסיטה")); }
   box.append(statsRow(null, r));
   const st = locationStatus(start, null, now); if (st) box.append(st);
-  box.append(fromPicker(prevOcc, now));
+  box.append(fromPicker(prevOcc, now, p.g));
   box.append(el("div", { class: "row" }, showRouteBtn(p.c), el("button", { class: "btn", type: "button", onclick: () => { focusPlace = null; render(); } }, "חזרה לשיעור הבא")));
-  box.append(startNotes(start));
+  box.append(startNotes(start, "", now));
   drawRoute(r, null, start, p.c);
 }
 function renderNext(now) {
@@ -840,7 +832,7 @@ function renderNext(now) {
   if (focusBuilding) { target = focusBuilding; eyebrow = "ניווט לבניין"; }
   else if (focusOcc) { occ = focusOcc; target = occ.b; eyebrow = sameDay(occ.start, now) ? "שיעור שנבחר · היום" : "שיעור שנבחר · יום " + DAYS[occ.start.getDay()]; }
   else if (next) { occ = next; target = next.b; eyebrow = sameDay(next.start, now) ? "השיעור הבא" : "השיעור הבא · יום " + DAYS[next.start.getDay()] + " " + next.start.toLocaleDateString("he-IL", { day: "numeric", month: "numeric" }); }
-  if (!target && !occ) { box.append(el("div", { class: "eyebrow" }, "השיעור הבא"), el("h2", {}, "אין שיעורים בשלושת השבועות הקרובים"), el("div", { class: "note" }, "חופש! השיעורים מגיעים מהיומן שלך.")); drawRoute(null); return; }
+  if (!target && !occ) { box.append(el("div", { class: "eyebrow" }, "השיעור הבא"), el("h2", {}, icsText ? "אין שיעורים בשלושת השבועות הקרובים" : "טוענים את המערכת שלך…"), el("div", { class: "note" }, icsText ? "חופש!" : "רגע אחד")); drawRoute(null); return; }
 
   const prevOcc = occ ? prevOf(occ) : lastClassBefore(now), at = occ ? occ.start : now;
   const b = BLD.get(target);
@@ -857,7 +849,7 @@ function renderNext(now) {
     if (occ) box.append(el("label", { class: "from" }, el("span", { class: "eyebrow" }, "בניין"), buildingPicker(occ.title)));
     drawRoute(null); return;
   }
-  const start = startPoint(target, prevOcc, at);
+  const start = startPoint(target, prevOcc, at, b.g);
   const r = start.node != null ? route(start.node, b.g) : null;
   const walkMin = r ? Math.max(1, Math.ceil(r.minutes)) : null;
   box.append(statsRow(occ, r));
@@ -878,11 +870,11 @@ function renderNext(now) {
     box.append(statusEl("ok", "את בשיעור עכשיו", "עד " + hm(occ.end)));
   }
 
-  box.append(fromPicker(prevOcc, at));
+  box.append(fromPicker(prevOcc, at, b.g));
   const acts = el("div", { class: "row" }, showRouteBtn(b.c));
   if (focusOcc || focusBuilding) acts.append(el("button", { class: "btn", type: "button", onclick: () => { focusOcc = focusBuilding = null; render(); } }, "חזרה לשיעור הבא"));
   box.append(acts);
-  box.append(startNotes(start, occ ? " ו־" + BUFFER_MIN + " דק' למצוא את הכיתה." : ""));
+  box.append(startNotes(start, occ ? " ו־" + BUFFER_MIN + " דק' למצוא את הכיתה." : "", at));
   drawRoute(r, target, start);
 }
 function nearestCafes(fromNode, n = 2) {
@@ -965,7 +957,7 @@ $("q").addEventListener("input", () => {
   const hits = C.buildings.filter((b) => b.n.toLowerCase().startsWith(q) || (b.he || "").toLowerCase().includes(q) || (b.en || "").toLowerCase().includes(q)
     || (/ספרי|library/.test(q) && b.n === "401")).slice(0, 6);
   // places: match their name or their kind ("קפה", "כספומט", "הסעות 5"), nearest first
-  const now = new Date(), start = startPoint(null, lastClassBefore(now), now), sp = start.node != null ? shortest(start.node) : null;
+  const now = new Date(), start = startPoint(null, lastClassBefore(now), now, null), sp = start.node != null ? shortest(start.node) : null;
   const places = C.pois.filter((p) => KIND_LABEL[p.k] && (placeTitle(p).toLowerCase().includes(q) || KIND_WORDS[p.k].toLowerCase().split(" ").some((w) => w.startsWith(q) || (q.length > 2 && q.startsWith(w)))
     || (q.includes(" ") && (KIND_WORDS[p.k] + " " + placeTitle(p)).toLowerCase().includes(q))))
     .sort((a, b) => (sp ? sp.cost[a.g] - sp.cost[b.g] : placeTitle(a).localeCompare(placeTitle(b), "he", { numeric: true }))).slice(0, 6);
@@ -978,48 +970,21 @@ $("q").addEventListener("input", () => {
   for (const b of hits) out.append(el("button", { type: "button", class: "res", onclick: () => { showBuilding(b.n); $("next").scrollIntoView({ behavior: "smooth", block: "nearest" }); } }, chip(b.n), el("div", {}, b.he, el("span", {}, b.en + (b.approx ? " · מיקום משוער" : "")))));
 });
 
-/* ---------- calendar link ---------- */
-// Most calendar services (Google included) don't let other web pages read their feeds directly,
-// so after a direct attempt the page goes through CAL_PROXY (tools/calendar-proxy.js) when one is configured.
-const CAL_PROXY = "";
-const DEFAULT_CAL = "ori.ics"; // published next to the page; missing file = sample week
-const dlg = $("dlg");
-function msg(text, ok) { const m = $("ics-msg"); m.hidden = false; m.className = "msg " + (ok ? "ok" : "err"); m.textContent = text; }
-async function fetchCalendar(url) {
-  const tries = [url]; if (CAL_PROXY) tries.push(CAL_PROXY + "?url=" + encodeURIComponent(url));
-  let last;
-  for (const u of tries) {
-    try { const res = await fetch(u, { cache: "no-store" }); if (!res.ok) throw new Error("HTTP " + res.status); const t = await res.text(); if (/BEGIN:VCALENDAR/i.test(t)) return t; last = new Error("not a calendar"); }
-    catch (e) { last = e; }
+/* ---------- Ori's calendar ---------- */
+// Built in: the secret gist that her phone calendar also subscribes to (updating it updates both).
+// "ori.ics" next to the page comes first so the claude.ai copy, which can't reach other sites, still works.
+const CAL_SOURCES = ["ori.ics", "https://gist.githubusercontent.com/idoshuan/baa00491b9a161e3ac1616e38a57d859/raw/ori.ics"];
+async function loadCalendar() {
+  for (const src of CAL_SOURCES) {
+    try {
+      const res = await fetch(src, { cache: "no-store" }); if (!res.ok) continue;
+      const t = await res.text(); if (!/BEGIN:VCALENDAR/i.test(t)) continue;
+      if (t !== icsText) { icsText = t; store.set("ics", t); spCache.clear(); rebuildSchedule(); render(); }
+      return;
+    } catch {}
   }
-  throw last;
+  // offline: keep the copy saved on this phone
 }
-function syncDialog() {
-  const url = store.get("icsUrl", ""); $("ics-url").value = url;
-  $("ics-load").textContent = url ? "עדכון" : "חיבור"; $("ics-remove").hidden = !url;
-  $("open-sched").textContent = url ? "היומן מחובר" : "חיבור יומן";
-}
-async function connect(url) {
-  url = url.trim().replace(/^webcal:\/\//i, "https://");
-  if (!/^https:\/\//i.test(url)) { msg("צריך קישור שמתחיל ב־https:// או webcal://", false); return; }
-  msg("טוען את היומן…", true);
-  try {
-    const text = await fetchCalendar(url);
-    icsText = text; store.set("ics", text); store.set("icsUrl", url); rebuildSchedule(); spCache.clear(); syncDialog();
-    const now = new Date(), evs = expandICS(text, now, new Date(now.getTime() + 86400000 * 21));
-    const found = evs.filter((e) => findBuilding(e.location) || findBuilding(e.title)).length;
-    msg(`מעולה! היומן מחובר: ${evs.length} שיעורים בשלושת השבועות הקרובים, בניין זוהה ב־${found} מהם.`, true);
-    render();
-  } catch (e) {
-    console.warn("calendar fetch failed", e);
-    msg("לא הצלחנו לטעון את היומן מהקישור. בודקים שזה הקישור בפורמט iCal (מסתיים ב־.ics) ומנסים שוב.", false);
-  }
-}
-$("ics-load").onclick = () => connect($("ics-url").value);
-$("ics-remove").onclick = () => { icsText = ""; overrides = {}; store.set("ics", ""); store.set("icsUrl", ""); store.set("overrides", {}); rebuildSchedule(); syncDialog(); render(); msg("היומן נותק. מוצגת מערכת לדוגמה.", true); };
-const openDlg = () => { syncDialog(); $("ics-msg").hidden = true; try { dlg.showModal(); } catch { dlg.setAttribute("open", ""); } };
-$("open-sched").onclick = openDlg; $("sample-connect").onclick = openDlg;
-syncDialog();
 
 /* ---------- love gate ---------- */
 const GATE = [
@@ -1069,9 +1034,8 @@ function boot() {
 
 /* ---------- boot ---------- */
 function startData() {
-const u = store.get("icsUrl", "");
-if (!u) fetch(DEFAULT_CAL, { cache: "no-store" }).then((r) => (r.ok ? r.text() : "")).then((t) => { if (/BEGIN:VCALENDAR/.test(t)) { icsText = t; rebuildSchedule(); render(); } }).catch(() => {});
-if (u) fetchCalendar(u).then((t) => { icsText = t; store.set("ics", t); rebuildSchedule(); render(); }).catch(() => {}); // keep the saved copy if offline
+loadCalendar();
+setInterval(loadCalendar, 30 * 60000); // pick up schedule changes while the page stays open
 setInterval(() => { const d = new Date(); if (!sameDay(d, selectedDay || d) && !focusOcc) selectedDay = null; rebuildSchedule(); render(); }, 30000);
 $("mapbox").append(popup);
 new ResizeObserver(() => view && setView(view)).observe($("mapbox"));
